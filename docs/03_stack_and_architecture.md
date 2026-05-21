@@ -18,10 +18,11 @@
                   [ LLM APIs: GPT-5, Claude, Gemini, Perplexity ]
 ```
 
-The system has three layers:
+The system has four layers:
 1. **Probing layer** — workers that query LLMs and store raw responses
 2. **Parsing layer** — workers that extract structured data from raw responses
-3. **Presentation layer** — backend API and frontend dashboard
+3. **Action layer** — generates publish-ready content / schema / page artifacts per recommendation; tracks ship-and-lift
+4. **Presentation layer** — backend API and frontend dashboard
 
 ## 2. Component breakdown
 
@@ -60,6 +61,17 @@ The system has three layers:
 - **Input:** the user's website content (scraped), top competitor's content (scraped), the LLM responses where the competitor was picked
 - **Output:** ranked list of specific content/structure changes to make
 - **Frequency:** generated weekly per brand, not per query
+
+### 2.4b Action engine (the wedge vs Profound)
+- **Purpose:** for each recommendation, generate the **actual publish-ready artifact** (FAQ block, comparison-page copy, JSON-LD schema, meta-description rewrite, cited-source content). Recommendations alone are what Profound and adjacent tools already do; we ship the change.
+- **Model used:** Claude Sonnet 4.5 for content artifacts (creative + structured); Claude Haiku 4.5 for schema/meta (deterministic + cheap)
+- **Output formats:** Markdown, HTML, JSON-LD, plain text. Each artifact comes with the source recommendation, the evidence (LLM responses), and a preview.
+- **Approval gate:** every artifact requires explicit brand approval before any publishing path is enabled. No autonomous publishing in any version.
+- **Distribution:**
+  - **v1 (closed beta, August 2026):** manual export only — downloadable bundle per brand, copy-paste into their CMS.
+  - **v2 (Q4 2026):** CMS push via Shopify Storefront API, Webflow API, WordPress REST, Contentful Management API. Per-artifact approval still required.
+- **Measurement loop:** ship-time captured. Mention rate is measured against the same query set for 7 and 30 days post-publish. Lift is attributed back to the artifact and rolled into the cross-brand playbook.
+- **Cross-brand playbook:** patterns that move mention rate in one brand × category are surfaced (anonymized) as recommendations for similar brands. This is the compounding moat.
 
 ### 2.5 Backend API
 - **Framework:** FastAPI (Python)
@@ -144,6 +156,34 @@ CREATE TABLE recommendations (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Action artifacts (the wedge: publish-ready output per recommendation)
+CREATE TABLE action_artifacts (
+  id UUID PRIMARY KEY,
+  recommendation_id UUID REFERENCES recommendations(id),
+  brand_id UUID REFERENCES brands(id),
+  artifact_type TEXT NOT NULL,        -- 'faq', 'comparison_copy', 'schema_jsonld', 'meta_description', 'cited_content'
+  artifact_format TEXT NOT NULL,      -- 'markdown', 'html', 'json_ld', 'plain_text'
+  artifact_body TEXT NOT NULL,
+  evidence_response_ids UUID[],       -- which LLM responses justify this artifact (neutrality requirement)
+  approval_status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  shipped_at TIMESTAMPTZ,             -- when the artifact was published (manual export or CMS push)
+  ship_method TEXT,                   -- 'manual_export', 'shopify', 'webflow', 'wordpress', 'contentful'
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Ship-and-lift measurement per artifact
+CREATE TABLE artifact_lift (
+  id UUID PRIMARY KEY,
+  artifact_id UUID REFERENCES action_artifacts(id),
+  window_days INT NOT NULL,           -- 7 or 30
+  mention_rate_before NUMERIC,
+  mention_rate_after NUMERIC,
+  lift_pp NUMERIC,                    -- percentage-point change
+  measured_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Aggregated daily metrics per brand
 CREATE TABLE daily_metrics (
   id UUID PRIMARY KEY,
@@ -215,9 +255,11 @@ CREATE TABLE daily_metrics (
 1. **Probe script** (day 1-2): a Python script that takes a brand name and category, generates queries, hits 4 LLM APIs, saves raw responses to a local SQLite file. No frontend, no auth.
 2. **Parser script** (day 3): reads raw responses from SQLite, calls a parsing model, writes structured rows to the same SQLite.
 3. **Static report generator** (day 4-5): reads parsed data, generates a one-page HTML report with charts (using matplotlib or plotly) showing mention rate, competitor comparison, top losing queries.
-4. **Show this to brands** (week 2): 5 free audits to mid-market DTC consumer brands. Validate the insight is interesting.
-5. **Web app** (week 3-6): if validation works, port the scripts into a FastAPI + Next.js app with self-serve onboarding.
-6. **Closed beta launch** (August): 10 paying brands at $1,000-1,500/month.
+4. **Action-artifact generator** (day 5-6, lightweight v0): for the top 3 losing queries per brand, generate one publish-ready artifact each (an FAQ block or a schema snippet) so the audit isn't just "here's your problem" but "here's a fix you can paste in today." This is the wedge demonstrated on day one. No CMS push — copy-paste only.
+5. **Show this to brands** (week 2): 5 free audits to mid-market consumer-products brands (clothing / beauty / cosmetics / food). Validate that the action artifacts get used.
+6. **Web app** (week 3-6): if validation works, port the scripts into a FastAPI + Next.js app with self-serve onboarding and the full action engine.
+7. **Closed beta launch** (August): 10 paying brands at $1,000-1,500/month, manual export only.
+8. **CMS integrations** (v2, Q4 2026): Shopify, Webflow, WordPress, Contentful push with per-artifact approval.
 
 ## 7. What I'm explicitly not doing yet
 

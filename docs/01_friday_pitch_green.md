@@ -6,23 +6,44 @@
 
 ---
 
-## The pitch (read out loud, time it)
+## The pitch (read out loud, time it — target 1:55–2:00 at ~140 wpm)
 
-When a consumer asks ChatGPT or Claude "what is the best running shoe under 150 dollars for flat feet," the model picks one. The brand that gets picked makes the sale. The brand that does not get picked does not exist as far as that consumer is concerned.
+When a consumer asks ChatGPT "what is the best moisturizer for sensitive skin"
+or "what running jacket should I buy under 200 dollars," the model picks a
+handful of brands. The brand picked makes the sale. The brand not picked does
+not exist for that consumer.
 
-Today every brand spends millions optimizing for Google. Google is a 300 billion dollar a year advertising business. Nobody knows how to optimize for being picked by an LLM, and 50 percent of buying-intent search traffic is shifting from Google to ChatGPT, Claude, and Perplexity right now.
+Today every brand spends millions optimizing for Google. Nobody has solved how
+to optimize for being picked by an LLM, and consumer buying-intent traffic is
+shifting fast from Google to ChatGPT, Claude, Gemini, and Perplexity.
 
-I am building **the Google Search Console for the LLM era**. A brand-facing analytics and recommendations platform that tells consumer brands exactly how AI models are talking about them, where their competitors are winning, and what to change to start winning back.
+There is already a leader in measuring this — **Profound**. They are the
+Google Search Console of the LLM era, and they are good at it. **But measurement
+is not what brands need. Brands need action.** Knowing you have a 12 percent
+mention rate does not move it. Knowing what to publish, where, and in what
+format does. That is what we build.
 
-The product is pure analytics. Brands log in and see: what percentage of relevant buying queries mention them, which competitors beat them and why, what specific language or content changes will move that number. We run 500 to 1000 buyer queries per brand per day across GPT-5, Claude, Gemini, and Perplexity. We parse every response, extract structured data, surface insights.
+We probe the four major LLMs at scale, parse every response into structured
+data, and then **generate publish-ready content, schema, and page changes**
+that move the mention rate. The brand approves, we ship the change, we measure
+the lift. Profound monitors. We act.
 
-The business model is SaaS. 1000 to 3000 dollars per brand per month. Mid-market consumer brands. Hundreds of thousands of them in the US alone. Gross margin sits at 50 to 70 percent today, improves as we cache and optimize.
+We are also the only neutral layer. Brand-paid only. We never take money from
+OpenAI, Anthropic, Google, or Perplexity. The day any of them ship their own
+visibility tool, they can never be neutral across the others. We always can.
 
-The moat is the proprietary dataset. Over time we accumulate millions of LLM responses across categories. We are the benchmark. The category leaders Semrush, Ahrefs, and Conductor exist because Google made a tooling vacuum. The same vacuum exists for LLMs. Whoever fills it first owns it.
+Business model: SaaS, 1,000 to 3,000 dollars per brand per month. Target buyer
+is the head of SEO or CMO at a mid-market consumer-products brand — clothing,
+beauty, cosmetics, food — where consumer LLM-query volume is highest and the
+SEO budget is already there. Gross margin lands around 70 percent and improves
+as we cache and route to cheaper models.
 
-Why this is not eaten by OpenAI: they will not build a tool that helps brands game their own model. Structural conflict of interest. Why this is not eaten by Semrush: they have the customers but they are AI-bolted-on, not AI-native, and the architecture is fundamentally different.
+The moat is the cross-brand action playbook. Every change we ship teaches us
+what actually moves mention rates in each category. Profound has the dataset.
+We have the dataset *plus* the proof of what works.
 
-I will have a working v0 in two weeks. Five brands, 100 queries each, four models, real data. If you are a consumer brand marketer, talk to me after.
+I will have a working v0 in two weeks. **My ask: five warm intros to heads of
+SEO at DTC consumer brands, and feedback from anyone who has sold to a CMO.**
 
 ---
 
@@ -30,37 +51,72 @@ I will have a working v0 in two weeks. Five brands, 100 queries each, four model
 
 | Beat | Duration | Content |
 |---|---|---|
-| Hook | 15 sec | The Comcast / Allbirds / ChatGPT scenario |
-| Market | 20 sec | 300B Google ad market shifting to LLMs |
-| Product | 30 sec | What it actually is and does |
-| Business model | 20 sec | SaaS, pricing, margin |
-| Moat | 20 sec | Proprietary dataset + category-defining timing |
-| Why not eaten | 10 sec | OpenAI conflict + Semrush legacy |
-| Ask | 5 sec | Working v0 in two weeks |
+| Hook | 15 sec | The skincare / running-jacket / ChatGPT scenario |
+| Market shift | 15 sec | Buying-intent traffic moving Google → LLMs |
+| Competitor honesty | 15 sec | Profound is the leader at measurement |
+| The wedge | 25 sec | We act, not just measure — generate + ship the change |
+| Neutrality | 15 sec | Brand-paid only, structural advantage vs LLM-cos |
+| Business model | 15 sec | SaaS, $1–3k/mo, mid-market consumer products, ~70% margin |
+| Moat | 10 sec | Cross-brand action playbook = compounding proof |
+| Ask | 10 sec | 5 warm intros, CMO-sales feedback |
 
 ---
 
 ## Anticipated questions and short answers
 
-**Q: How is this different from Profound or sitefire?**
-They focus on enterprise SaaS and B2B. I am going after consumer brands where the volume is and where the marketing budget already exists for SEO tooling.
+**Q: How are you different from Profound?**
+They measure. We act. We generate the actual content, schema, and page
+changes, push them via CMS integrations, and measure the lift. Closest
+functional analog is AirOps, but AirOps is a generic AI-workflow tool — we
+are LLM-visibility-specialized end to end.
+
+**Q: What about Peec, Otterly, AthenaHQ, BrightEdge, Semrush?**
+Peec and Otterly are mid-market measurement plays — same gap as Profound.
+BrightEdge and Semrush are SEO incumbents bolting on AI modules; they have
+distribution but their architecture is Google-first. We assume Semrush ships
+a competitor in 6–12 months. Our advantage is depth and dataset by then.
+
+**Q: Why not vertical?**
+We stay horizontal because the buyer profile is consistent across mid-market
+consumer brands and the underlying probing infrastructure is the same. If we
+lean by category in marketing, we lean into consumer products — clothing,
+beauty, cosmetics, food — because that is where consumer LLM-query volume
+concentrates.
 
 **Q: Why now and not 18 months ago?**
-18 months ago LLMs were not part of the buying journey. Today they are. Consumer survey data from December 2025 shows 47 percent of US consumers used an LLM for a product recommendation in the prior 90 days. The shift is happening now.
+18 months ago LLMs were not a meaningful part of the buying journey. Today
+they are. Brands are being asked by their CEOs what they are doing about
+ChatGPT. The buyer exists today with budget today.
 
 **Q: What if Google launches this for Gemini?**
-They will. But the brand needs cross-model visibility, not Gemini-only visibility. We are the neutral layer across all models, which Google cannot credibly be.
+They will, for Gemini. Brands need cross-model visibility, and Google has
+zero history of providing neutral competitive-intelligence tooling between
+their own products and rivals. Neutrality is a structural advantage we have
+that no LLM company can match.
 
-**Q: How do you handle model output non-determinism?**
-We run each query multiple times to establish a probability distribution, not a single answer. The metric is "mention rate over 50 trials," not "did you appear in this one response."
+**Q: How do you handle model non-determinism?**
+We don't measure a single response. We run multiple trials per query across
+four models and surface a probability distribution. The metric is mention
+rate over many trials, not "did you appear in this one response."
+
+**Q: How do you stay neutral if you sell action-as-a-service?**
+Brand-paid only. No money from any LLM company. No affiliate or referral
+commissions. Our methodology is public. We never sell ranking position in
+our own index. Every recommendation cites the actual LLM responses that
+produced it.
 
 **Q: First customer plan?**
-Cold outreach to 30 mid-market DTC consumer brands with a free audit. Run the queries, send them a one-page report showing their LLM visibility score. Convert 10 to 15 percent into paid pilots.
+Cold outreach plus warm intros to heads of SEO at mid-market consumer
+brands. Free audit as the wedge — we run the queries, deliver a one-page
+LLM-visibility report, convert the strongest fits into paid pilots.
 
 ---
 
 ## Things to say if you have extra time
 
-- The data infrastructure compounds. Every month of running queries makes our dataset more valuable.
-- We are not training a model. We are measuring what trained models do. Different game entirely.
-- The buyer is the head of SEO or head of brand marketing. They have budget today. They are looking for tools today.
+- We are not training a model. We are measuring what trained models do and
+  then changing what brands publish so the next response cycle is better.
+- Every change we ship teaches us a cross-brand pattern. The recommendations
+  get sharper every month.
+- The buyer is the head of SEO or head of brand marketing. They have budget
+  today. They are being asked by their CEO about ChatGPT today.

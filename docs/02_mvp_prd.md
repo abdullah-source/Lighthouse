@@ -17,11 +17,11 @@ Today brands have zero visibility into:
 - What language, attributes, or content is causing the model to pick competitors
 - How their visibility is trending over time
 
-Existing SEO tools (Semrush, Ahrefs, Conductor) were built for Google. They do not measure LLM behavior.
+Existing SEO tools (Semrush, Ahrefs, Conductor) were built for Google. They do not measure LLM behavior. A first wave of LLM-visibility tools — led by Profound, with Peec, Otterly, AthenaHQ, and AirOps in adjacent positions — has solved the measurement layer. **None of them ship the change.** Brands are told what their mention rate is and left to figure out what to publish, where, and how. That is the gap.
 
 ## 2. Target user
 
-Primary: Head of SEO, Head of Brand Marketing, or CMO at a mid-market consumer brand. Examples: a DTC sneaker brand doing 20-200M ARR, a beauty brand, a kitchen-goods brand.
+Primary: Head of SEO, Head of Brand Marketing, or CMO at a mid-market consumer brand. We stay horizontal across consumer categories. When we lean by category for marketing, content, and case studies, we lean into **consumer products — clothing, beauty, cosmetics, food** — because that is where consumer LLM-query volume concentrates and the same product works globally.
 
 Secondary: Boutique digital agencies serving the above.
 
@@ -29,7 +29,19 @@ Why this user: they already have a tooling budget for SEO. They are being asked 
 
 ## 3. Core value proposition
 
-> "Like Google Search Console, but for the LLM era. See exactly how AI models recommend or ignore your brand, and what to change."
+> "Profound monitors. We act. We measure how AI models recommend or ignore your brand, generate the publish-ready content and schema changes that move your mention rate, and ship them with your approval."
+
+The wedge is **action**, not measurement. The differentiator that holds up under
+competitive pressure is **neutrality**:
+
+- Brand-paid only. No money from OpenAI, Anthropic, Google, or Perplexity.
+- No affiliate or referral commissions on tools we recommend.
+- Open methodology — the mention-rate score is publicly documented; brands can audit.
+- No paid prominence in our index. Ranking position is never for sale.
+- Every recommendation cites the actual LLM responses that produced it.
+
+The day any LLM company ships a first-party visibility product, they cannot
+credibly be neutral across the other models. We always can.
 
 ## 4. Success metrics
 
@@ -71,18 +83,31 @@ Why this user: they already have a tooling budget for SEO. They are being asked 
 **Recommendations engine**
 - For each query the brand loses, generate a recommendation: "Your top competitor is described as X, which appears on their product page but not yours. Adding Y to your site may improve mention rate for this query."
 
+**Action engine (the wedge)**
+- For each recommendation, generate **publish-ready output**, not just advice:
+  FAQ blocks, comparison-page copy, JSON-LD schema, meta-description rewrites,
+  cited-source content fragments.
+- Brand previews each artifact and approves before anything is published. No
+  autonomous publishing without explicit consent.
+- v1 closed beta ships **manual export** (copy-paste / downloadable bundles).
+  CMS integrations (Shopify, Webflow, WordPress, Contentful) ship in v2.
+- Every shipped change is tracked. Mention-rate lift is measured for 7–30 days
+  after publish and reported back to the brand.
+- Cross-brand patterns feed a proprietary action playbook — the compounding moat.
+
 **Reporting**
-- Weekly email summary
-- Exportable CSV of all data
+- Weekly email summary including mention-rate trend, top losing queries, and
+  ship-and-lift table for action artifacts that landed that week.
+- Exportable CSV of all data.
 
 ### Out of scope for v1 (deferred)
 
-- Auto-publishing recommendations to the brand's website
+- **Automated** publishing to the brand's website (v1 = manual export; v2 = CMS push with brand approval)
 - API access for the brand
 - Multi-brand portfolio view (for agencies)
 - Custom LLM coverage (only the big 4 in v1)
 - Geographic segmentation (US-only in v1)
-- Native integrations with CMS platforms (Shopify, etc.)
+- Native integrations with CMS platforms (Shopify, Webflow, WordPress, Contentful — all v2)
 - A/B testing of content changes
 
 ## 6. User stories
@@ -104,6 +129,12 @@ Why this user: they already have a tooling budget for SEO. They are being asked 
 - **Cost ceiling per brand per month:** under 500 dollars in API spend
 - **Reliability:** 99% uptime acceptable for v1 (this is a dashboard, not infrastructure)
 - **Privacy:** no consumer data touched. Only brand-provided category info and public LLM responses.
+- **Neutrality (binding principles, not just marketing):**
+  - No revenue from any LLM provider.
+  - No affiliate / referral / placement commissions.
+  - Public methodology document for the mention-rate score.
+  - Ranking position in our own index is never sold.
+  - Every recommendation surfaces the underlying LLM-response evidence.
 
 ## 8. Technical architecture
 
@@ -142,10 +173,13 @@ See `03_stack_and_architecture.md` for details.
 
 ## 11. Risks
 
-- **Market timing:** category is so new that some brands may wait 6 months before buying any tool. Mitigation: free audit as the wedge.
-- **Incumbent risk:** Semrush or Ahrefs could ship a competing module in 6-12 months. Mitigation: move fast, build the dataset moat.
-- **LLM API cost volatility:** if OpenAI raises prices significantly, the unit economics shift. Mitigation: multi-model from day one, switch to cheaper models for parsing.
+- **Competitive risk (Profound and adjacent):** Profound is the category leader on measurement; Peec, Otterly, AthenaHQ, AirOps are in adjacent positions. Mitigation: action wedge (we ship the change, they don't) + neutrality stance (we stay credibly cross-model when LLM cos move).
+- **Incumbent risk:** Semrush, BrightEdge, Conductor have distribution and are bolting on AI-visibility modules. Mitigation: depth in one problem (LLM visibility + action) and an accumulating cross-brand action playbook they cannot replicate without our trial logs.
+- **Market timing:** category is new; some brands may wait 6 months before buying any tool. Mitigation: free audit as the wedge.
+- **LLM API cost volatility:** if OpenAI raises prices significantly, unit economics shift. Mitigation: multi-model from day one, route parsing to the cheapest capable model.
 - **Model output non-determinism:** results vary run to run. Mitigation: probability-based metrics, multiple trials per query.
+- **Neutrality erosion:** taking LLM-provider money (or affiliate commissions) would destroy the positioning. Mitigation: written, public neutrality charter; revenue from brands only; periodic external audit of the methodology.
+- **Action-engine trust:** brands will not let an automated system publish to their website without strong guardrails. Mitigation: v1 ships manual export only. v2 CMS push always requires explicit per-artifact approval. No autonomous publishing in any version.
 
 ## 12. What "done" looks like for the MVP
 
