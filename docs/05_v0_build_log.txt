@@ -1,0 +1,292 @@
+================================================================
+v0 BUILD LOG — Brand Visibility Probe
+Sessions: May 26–27, 2026 | Author: Abdullah Ali
+================================================================
+
+WHAT THIS FILE IS
+-----------------
+A plain-text running log of how the v0 came together: strategic
+pivots, code scaffolding, setup pain points, and debugging. Written
+so you can pick up cold tomorrow and remember where things stand.
+
+================================================================
+1. STRATEGIC PIVOT (committed and pushed earlier in week)
+================================================================
+
+Decision: stay horizontal but pivot positioning from "first to fill
+the LLM visibility vacuum" → "Profound monitors; we act."
+
+Three locked decisions:
+
+  1. HORIZONTAL — buyer is mid-market consumer brands across
+     categories. If forced to lean by vertical, we lean into
+     consumer products (clothing, beauty, cosmetics, food) because
+     that is where consumer LLM-query volume concentrates.
+
+  2. ACTION IS THE WEDGE — closest analog is AirOps, but we are
+     LLM-visibility-specialized end to end: probe, parse,
+     recommend, and execute the change.
+
+  3. NEUTRALITY IS THE MOAT-KEEPER —
+       - Brand-paid only. No money from OpenAI / Anthropic /
+         Google / Perplexity.
+       - No affiliate or referral commissions.
+       - Public methodology — mention-rate score is auditable.
+       - No paid prominence in our index.
+       - Every recommendation cites its source LLM responses.
+
+Also landed: the "fast loop / slow loop" framing for differentiation
+(answers the prof's question about how intentional content changes
+affect new model releases):
+
+  - Fast loop = retrieval-grounded models (Perplexity, ChatGPT
+    Search, Claude Search, Gemini Grounding). Content changes
+    propagate in hours-days.
+  - Slow loop = training-grounded base models. Content propagates
+    in 3-12 months through training cycles, authoritative
+    citations, schema, Common Crawl weight.
+  - Most competitors only optimize the fast loop. We do both.
+
+Commit: 3c60282 ("Pivot positioning: action wedge + neutrality stance")
+
+================================================================
+2. v0 ARCHITECTURE
+================================================================
+
+Five stages glued by a SQLite database. Pure CLI script, no web.
+
+  CLI args (--brand, --category)
+    -> config.py: load .env, validate keys
+    -> db.py: init SQLite schema
+    -> queries.py: 1 Sonnet call generates 20 buyer queries
+    -> probe.py: async fan-out, each query x 2 models = 40 calls
+    -> parse.py: async fan-out, Haiku w/ JSON tool-use per response
+    -> report.py: aggregate, print terminal report
+
+Models locked in config.py:
+  - Query generation:    claude-sonnet-4-6
+  - Probing (Anthropic): claude-sonnet-4-6
+  - Probing (OpenAI):    gpt-5
+  - Parsing:             claude-haiku-4-5-20251001
+
+Stack:
+  - Python 3.13
+  - anthropic, openai, httpx, python-dotenv
+  - SQLite (stdlib, no ORM)
+  - asyncio for parallel API calls
+  - argparse for CLI
+
+================================================================
+3. FILES SHIPPED THIS SESSION
+================================================================
+
+Root level:
+  main.py            CLI entrypoint, orchestrates the pipeline
+  config.py          env vars, model IDs, tuning knobs
+  db.py              SQLite schema + insert/fetch helpers
+  queries.py         buyer-query generation (Sonnet, sync)
+  probe.py           async fan-out probing (Sonnet + GPT-5)
+  parse.py           async fan-out parsing (Haiku + tool-use)
+  report.py          terminal report aggregator
+  requirements.txt   pinned dependencies
+  .env.example       template for API keys (committed)
+  .env               actual keys (GITIGNORED, never committed)
+  README.md          setup, run command, file map
+  .vscode/settings.json   points VSCode to .venv interpreter
+
+Auto-created at runtime:
+  data/probe.sqlite  the SQLite DB (gitignored)
+
+================================================================
+4. SETUP NOTES (in case you need to redo any of it)
+================================================================
+
+Python:        3.13.1 confirmed
+Virtual env:   .venv/ (already created and activated)
+Install:       .venv/bin/pip install -r requirements.txt
+               (took ~30 sec, installed 19 packages including transitive deps)
+
+API key sources:
+  Anthropic:   https://console.anthropic.com/settings/keys
+  OpenAI:      https://platform.openai.com/api-keys
+
+Credit balance check:
+  Anthropic:   $15 loaded
+  OpenAI:      added separately
+
+Phase 0 demo total budget: ~$1 across both providers for 5 brands.
+
+================================================================
+5. SECURITY LEARNINGS (DO NOT REPEAT THESE)
+================================================================
+
+What went wrong:
+  - Pasted a live Anthropic API key directly into the Claude chat.
+    Anything that captures chat history (transcripts, screenshots,
+    logs) now contains a working credential.
+
+What I did about it:
+  - Rotated the key at console.anthropic.com.
+  - Replaced .env with the new key.
+
+Rules for the rest of this project:
+  - NEVER paste keys into any chat (with me or anyone).
+  - Use TextEdit / VSCode to paste keys into .env directly.
+  - Or use `pbpaste` via terminal: never displays the key on screen.
+  - Or use `read -s` for silent input.
+  - If you ever leak a key by accident, rotate it immediately —
+    deletion + recreation takes 90 seconds.
+
+================================================================
+6. DEBUGGING WE HIT
+================================================================
+
+ISSUE A — OpenAI key not loading
+  Symptom: Anthropic loaded YES, OpenAI loaded NO after editing .env
+  Root cause: line in .env still started with "#", so it was a
+              comment and python-dotenv ignored it.
+  Fix:   removed the leading "#" from the OPENAI_API_KEY= line.
+
+ISSUE B — OpenAI API call rejected with BadRequestError
+  Symptom: "Unsupported parameter: 'max_tokens' is not supported
+            with this model. Use 'max_completion_tokens' instead."
+  Root cause: GPT-5 is a "reasoning-class" model and uses the new
+              parameter name. Legacy GPT-4 code patterns don't work.
+  Fix:   renamed `max_tokens` -> `max_completion_tokens` in
+         probe.py _probe_openai().
+
+ISSUE C — OpenAI call succeeds but returns empty string
+  Symptom: finish_reason='length', completion_tokens=800,
+           reasoning_tokens=800, accepted_prediction_tokens=0.
+  Root cause: GPT-5 spends tokens on internal chain-of-thought
+              BEFORE producing visible output. With max_completion_tokens
+              = 800, all budget went to reasoning, leaving zero for
+              the actual answer.
+  Fix:   - bumped max_completion_tokens to 2000
+         - added reasoning_effort="low" to cap internal reasoning
+         Confirmed working: 320 reasoning + 250 output tokens,
+         clean response with 3 specific shoe brands recommended.
+
+ISSUE D (cosmetic, not user-facing) — main.py print message
+  Said "queries x 2 models" even when running Claude-only.
+  Fixed to just "Probing N queries..." regardless of mode.
+
+ISSUE E (IDE-only, not runtime) — VSCode red squiggles on imports
+  Symptom: "Cannot find module 'anthropic'" / "Cannot find module 'openai'"
+  Root cause: VSCode's Python language server was using system Python
+              (~/Library/Python/3.13/) instead of the venv where the
+              packages are installed.
+  Fix:   created .vscode/settings.json pointing at .venv/bin/python.
+         Reload window after editing settings.json.
+
+================================================================
+7. WHERE THINGS STAND TONIGHT
+================================================================
+
+Status:        v0 is built, both API keys load, OpenAI debug fixed.
+Still pending:
+  [ ] Run the Allbirds test end-to-end (no errors observed in
+      diagnostic, but the full 40-call pipeline hasn't been run yet)
+  [ ] Inspect the report — does Allbirds appear at a believable
+      rate (~30-40%)? Are the top competitors actual
+      sustainable-footwear brands (Veja, Hoka, Brooks, etc)?
+  [ ] If the report looks good, commit + push the v0 code to
+      github.com/abdullah-source/summer
+  [ ] Run 4 more audit brands for real cold-outreach prospects
+  [ ] Rotate the current Anthropic key once you're done
+      iterating (since it appeared in my context this session
+      via the file-edit notification — lower risk than chat-paste
+      but worth closing the loop)
+
+================================================================
+8. THE TEST COMMAND TO RUN TOMORROW
+================================================================
+
+cd "/Users/abdullahali/project - summer"
+source .venv/bin/activate
+python main.py --brand "Allbirds" --category "sustainable footwear"
+
+Expected wall time: ~60-90 seconds.
+Expected cost: ~$0.13.
+
+What you should see in the report:
+  - Mention rate for Allbirds (target ~30-40% based on category)
+  - Avg position when mentioned (lower = better)
+  - Share of voice across all brands surfaced
+  - By-model breakdown (gpt-5 vs claude-sonnet-4-6 side by side)
+  - Top 5 competitors with their counts
+
+If anything looks wrong (empty report, weird competitors,
+parser errors), paste the output in the next Claude session
+and we'll diagnose together.
+
+================================================================
+9. NEXT 4 AUDIT BRANDS (for cold-outreach wedge)
+================================================================
+
+Suggested 5-brand list for the Friday demo + cold-outreach pipeline:
+
+  1. Allbirds       sustainable footwear      (already tested)
+  2. Glossier       beauty / skincare
+  3. Olipop         functional beverages
+  4. Tracksmith     running apparel
+  5. Necessaire     body care / cosmetics
+
+Pick based on:
+  - Real DTC consumer brand, $20-200M ARR
+  - Reachable head of SEO on LinkedIn
+  - Ideally weak connection (alum, mutual follower, friend-of-friend)
+
+For each: run the script, get the terminal report (later: HTML),
+draft a cold email to head of SEO showing their numbers + top
+3 winning competitors, ask for a 15-min call. Conversion target:
+1-2 of 5 say yes, of those 1 converts to a paid pilot.
+
+================================================================
+10. THINGS TO PREP BEFORE FRIDAY (May 29)
+================================================================
+
+Friday is the internal Eship Studio pitch (not the investor pitch
+— that's the polished version on Monday June 8 per the prof's note).
+
+Audience: Eship Studio + Outreach Team.
+
+For Friday morning you need:
+  - All 3 buckets presented: Green (this project), Yellow (Jasper
+    AI cautionary), Purple (still TBD — edge voice inference was
+    the lead candidate per docs/04 but never finalized).
+  - For Green: 2-min pitch (already revised in 01_friday_pitch_green.md),
+    + 5 audit results to demo as proof the pipeline works.
+
+Read [docs/01_friday_pitch_green.md] out loud against a stopwatch.
+Target 1:55-2:00 at ~140 wpm. The rewrite is meant to land at
+that length but the only way to know is to time it.
+
+================================================================
+11. GSTACK COMMANDS TO USE FROM NOW ON
+================================================================
+
+gstack skills are installed but not yet active in the Claude
+session you used today (skills register at session start).
+
+To activate: close this Claude Code session and start a fresh one
+in /Users/abdullahali/project - summer. Type "/" and you should see
+all gstack commands in autocomplete.
+
+Commands most relevant to where you are now:
+
+  /qa        run before showing the audit reports to anyone
+  /review    run on the v0 code before committing
+  /codex     second-opinion review (different model perspective)
+  /ship      structured prompt for building the next feature
+  /retro     end-of-week reflection after Friday pitch
+  /document-release   for the polished writeup of v0 results
+  /plan-ceo-review    sanity-check pitches before Friday
+
+The prof said the v0 should be "single-mindedly pursued" after
+the Friday pitch. Use /ship and /pair-agent to keep momentum
+once the wedge is validated.
+
+================================================================
+END OF LOG
+================================================================

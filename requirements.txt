@@ -1,0 +1,16 @@
+# Anthropic SDK — talks to Claude models.
+# We use Claude Sonnet 4.6 for query generation, and Claude Haiku 4.5 for parsing.
+anthropic>=0.40
+
+# OpenAI SDK — talks to GPT models.
+# We use GPT-5 as one of the two LLMs we probe on behalf of the brand.
+openai>=1.50
+
+# httpx — modern async HTTP client. Both SDKs above use it under the hood,
+# but we pin it explicitly so we control the version and can use it directly
+# if we ever need to call an API the SDKs don't cover (e.g. Perplexity later).
+httpx>=0.27
+
+# python-dotenv — loads a .env file into environment variables at startup.
+# Lets us keep API keys out of code and out of git.
+python-dotenv>=1.0
