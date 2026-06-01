@@ -62,8 +62,13 @@ The system has four layers:
 - **Output:** ranked list of specific content/structure changes to make
 - **Frequency:** generated weekly per brand, not per query
 
-### 2.4b Action engine (the wedge vs Profound)
-- **Purpose:** for each recommendation, generate the **actual publish-ready artifact** (FAQ block, comparison-page copy, JSON-LD schema, meta-description rewrite, cited-source content). Recommendations alone are what Profound and adjacent tools already do; we ship the change.
+### 2.4b Action engine + causal experiment loop
+> **June 1, 2026 correction.** This was titled "the wedge vs Profound." Action is no
+> longer a wedge — Profound and AirOps both generate and publish content. The wedge is
+> the **causal experiment loop**: every artifact is shipped as a measured before/after
+> experiment so we can prove lift, not just produce content. See
+> `07_demo_experiment_spec.md`.
+- **Purpose:** for each recommendation, generate the **actual publish-ready artifact** (FAQ block, comparison-page copy, JSON-LD schema, meta-description rewrite, cited-source content), then measure its causal lift against the same query set with holdout controls. Generation alone is table stakes now; the proof is the differentiator.
 - **Model used:** Claude Sonnet 4.5 for content artifacts (creative + structured); Claude Haiku 4.5 for schema/meta (deterministic + cheap)
 - **Output formats:** Markdown, HTML, JSON-LD, plain text. Each artifact comes with the source recommendation, the evidence (LLM responses), and a preview.
 - **Approval gate:** every artifact requires explicit brand approval before any publishing path is enabled. No autonomous publishing in any version.

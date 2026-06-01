@@ -2,8 +2,15 @@
 ## Brand Visibility for the LLM Era
 
 **Owner:** Abdullah Ali
-**Last updated:** May 20, 2026
-**Status:** Pre-build, pitching Friday May 22
+**Last updated:** May 20, 2026 (positioning corrected June 1, 2026)
+**Status:** Pre-build; v0 probe built; revising pitch
+
+> **June 1, 2026 correction.** Sections below originally claimed competitors only
+> measure and "none ship the change." That is false as of June 2026 — Profound and
+> AirOps both generate and publish content changes. The real differentiator is
+> **proven causal lift, deep in one consumer category** (see
+> `06_competitor_benchmark.md` and `01_friday_pitch_green.md`). Where the old "action
+> wedge" framing remains below, read it through that correction.
 
 ---
 
@@ -17,7 +24,7 @@ Today brands have zero visibility into:
 - What language, attributes, or content is causing the model to pick competitors
 - How their visibility is trending over time
 
-Existing SEO tools (Semrush, Ahrefs, Conductor) were built for Google. They do not measure LLM behavior. A first wave of LLM-visibility tools — led by Profound, with Peec, Otterly, AthenaHQ, and AirOps in adjacent positions — has solved the measurement layer. **None of them ship the change.** Brands are told what their mention rate is and left to figure out what to publish, where, and how. That is the gap.
+Existing SEO tools (Semrush, Ahrefs, Conductor) were built for Google. They do not measure LLM behavior. A wave of LLM-visibility tools — Profound, AirOps, Peec, and others — has solved the measurement layer, and the leaders (Profound, AirOps) now also generate and publish content changes. Measurement and even action are commoditizing. **What none of them prove is causation:** which specific change *caused* the mention rate to move. Brands get a score and generic advice, not evidence that a change worked. That is the gap — proven causal lift, built deep in one category.
 
 ## 2. Target user
 
@@ -29,10 +36,19 @@ Why this user: they already have a tooling budget for SEO. They are being asked 
 
 ## 3. Core value proposition
 
-> "Profound monitors. We act. We measure how AI models recommend or ignore your brand, generate the publish-ready content and schema changes that move your mention rate, and ship them with your approval."
+> "Everyone scores your AI visibility; some now generate content too. We prove which
+> specific change *caused* the AI to recommend you — controlled before/after
+> experiments, deep in one consumer category, with the AI responses as evidence."
 
-The wedge is **action**, not measurement. The differentiator that holds up under
-competitive pressure is **neutrality**:
+The wedge is **proven causal lift** (not measurement, and not "action" — competitors
+ship action now). The supporting differentiators:
+- **Category density** — a causal dataset for one consumer category compounds and
+  isn't copyable by shipping a feature.
+- **Dual-loop framing** — optimize both the fast retrieval loop (days) and the slow
+  training loop (months); see `01_friday_pitch_green.md`.
+- **Neutrality**, as an earned ethical stance (not a marketing line — no competitor
+  markets it, and it carries weight only because we sit at the layer shaping consumer
+  recommendations):
 
 - Brand-paid only. No money from OpenAI, Anthropic, Google, or Perplexity.
 - No affiliate or referral commissions on tools we recommend.

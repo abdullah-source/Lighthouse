@@ -1,49 +1,66 @@
-# Friday Pitch — Green Bucket
-## Brand Visibility for the LLM Era
+# Friday Pitch — Brand Visibility for the LLM Era
 
-**Abdullah Ali | Summer Startup 2026 | Friday, May 22**
-**Slot: 2 minutes | No demo, pitch only**
+**Abdullah Ali | Summer Startup 2026 | revised June 1, 2026**
+**Audience: Eship Studio + Outreach Team (professor pitch, no funding) | ~2 min**
+
+> Revision note: the earlier version of this pitch claimed "Profound monitors, we
+> act — none of them ship the change." As of June 2026 that is false: Profound and
+> AirOps both generate and publish content changes today. This version drops that
+> claim and anchors on the one difference that holds up — proven causal lift, deep
+> in one category. See `06_competitor_benchmark.md` for the evidence.
 
 ---
 
 ## The pitch (read out loud, time it — target 1:55–2:00 at ~140 wpm)
 
-When a consumer asks ChatGPT "what is the best moisturizer for sensitive skin"
-or "what running jacket should I buy under 200 dollars," the model picks a
-handful of brands. The brand picked makes the sale. The brand not picked does
-not exist for that consumer.
+When a consumer asks ChatGPT "what's the best moisturizer for sensitive skin," the
+model names a handful of brands. The brand it names makes the sale. The brand it
+skips does not exist for that consumer. Buying intent is moving fast from Google to
+ChatGPT, Claude, Gemini, and Perplexity.
 
-Today every brand spends millions optimizing for Google. Nobody has solved how
-to optimize for being picked by an LLM, and consumer buying-intent traffic is
-shifting fast from Google to ChatGPT, Claude, Gemini, and Perplexity.
+Let me be honest about the competition up front, because it matters. There is
+already a real category here — Profound, AirOps, Peec. They measure how AI sees
+your brand, and the leaders now also generate and publish content for you. I am not
+going to claim they don't act. They do. So the only question worth asking is: what
+is actually different?
 
-There is already a leader in measuring this — **Profound**. They are the
-Google Search Console of the LLM era, and they are good at it. **But measurement
-is not what brands need. Brands need action.** Knowing you have a 12 percent
-mention rate does not move it. Knowing what to publish, where, and in what
-format does. That is what we build.
+Here it is. Everyone hands a brand a visibility score. Nobody proves which specific
+change *caused* the AI to start recommending you. Measurement is becoming a
+commodity — every tool shows the same visibility, position, and sentiment dashboard.
+The durable value is causal proof. We run a controlled before-and-after experiment:
+change one thing, re-probe the models, and show the lift with the actual AI
+responses as the evidence. Do that deep in one category and you build the one thing
+a competitor can't copy overnight — a proprietary dataset of what actually moves AI
+recommendations for mid-market consumer brands.
 
-We probe the four major LLMs at scale, parse every response into structured
-data, and then **generate publish-ready content, schema, and page changes**
-that move the mention rate. The brand approves, we ship the change, we measure
-the lift. Profound monitors. We act.
+And there's a deeper shift underneath this, which is the part I find most
+interesting. When every brand optimizes its content *for the model*, the consumer's
+choice set stops being "the best brands" and becomes "the brands that best shaped
+the model." It happens on two timescales. A fast loop, where retrieval models like
+Perplexity and ChatGPT Search change what consumers are shown this week. And a slow
+loop, where the base models, retrained on the web, change what the model *believes*
+about a category for years. Most tools only touch the fast loop. The slow loop is
+where you edit the default advice a whole generation of consumers inherits as
+neutral-sounding fact. That is a real change in who controls consumer discovery, and
+it's invisible.
 
-We are also the only neutral layer. Brand-paid only. We never take money from
-OpenAI, Anthropic, Google, or Perplexity. The day any of them ship their own
-visibility tool, they can never be neutral across the others. We always can.
+Because we sit at that layer, neutrality is structural, not a slogan. We are
+brand-paid only and we cite the exact AI evidence behind every recommendation. The
+day an LLM company ships its own visibility tool, it can never be neutral across the
+others. We always can.
 
-Business model: SaaS, 1,000 to 3,000 dollars per brand per month. Target buyer
-is the head of SEO or CMO at a mid-market consumer-products brand — clothing,
-beauty, cosmetics, food — where consumer LLM-query volume is highest and the
-SEO budget is already there. Gross margin lands around 70 percent and improves
-as we cache and route to cheaper models.
+Where I am: I've built a v0 that probes GPT-5 and Claude across buyer queries for a
+brand, parses every response into structured mention data, and reports mention rate,
+position, and competitors. The next step is the causal experiment — baseline, one
+change, re-probe, measure the lift.
 
-The moat is the cross-brand action playbook. Every change we ship teaches us
-what actually moves mention rates in each category. Profound has the dataset.
-We have the dataset *plus* the proof of what works.
+I'll be straight about the moat: today this is a thesis and one experiment, not a
+moat yet. The moat compounds as the causal dataset grows inside one category. That's
+the bet, and I think it's the right one.
 
-I will have a working v0 in two weeks. **My ask: five warm intros to heads of
-SEO at DTC consumer brands, and feedback from anyone who has sold to a CMO.**
+My ask: feedback on the causal-experiment methodology given how non-deterministic
+these models are, and intros to anyone running marketing at a mid-market DTC
+consumer brand who'd be a willing test case.
 
 ---
 
@@ -51,72 +68,60 @@ SEO at DTC consumer brands, and feedback from anyone who has sold to a CMO.**
 
 | Beat | Duration | Content |
 |---|---|---|
-| Hook | 15 sec | The skincare / running-jacket / ChatGPT scenario |
-| Market shift | 15 sec | Buying-intent traffic moving Google → LLMs |
-| Competitor honesty | 15 sec | Profound is the leader at measurement |
-| The wedge | 25 sec | We act, not just measure — generate + ship the change |
-| Neutrality | 15 sec | Brand-paid only, structural advantage vs LLM-cos |
-| Business model | 15 sec | SaaS, $1–3k/mo, mid-market consumer products, ~70% margin |
-| Moat | 10 sec | Cross-brand action playbook = compounding proof |
-| Ask | 10 sec | 5 warm intros, CMO-sales feedback |
+| Hook | 15 sec | Skincare / ChatGPT scenario; picked = sale |
+| Market shift | 10 sec | Buying intent moving Google → LLMs |
+| Honest competition | 20 sec | Profound / AirOps / Peec exist and DO act |
+| The difference | 30 sec | Causal proof, not just a score; category-dense dataset = moat |
+| The deeper shift | 25 sec | Fast loop / slow loop; who controls the consumer's choice set |
+| Neutrality (earned) | 10 sec | Brand-paid only; structural vs LLM-cos |
+| Where I am + honesty | 15 sec | v0 built; moat is a someday bet, said plainly |
+| Ask | 10 sec | Methodology feedback + DTC test-case intros |
 
 ---
 
 ## Anticipated questions and short answers
 
-**Q: How are you different from Profound?**
-They measure. We act. We generate the actual content, schema, and page
-changes, push them via CMS integrations, and measure the lift. Closest
-functional analog is AirOps, but AirOps is a generic AI-workflow tool — we
-are LLM-visibility-specialized end to end.
+**Q: How is this not just AirOps or Profound?**
+On features, it largely is — they measure, generate, and publish. The difference is
+causal proof: I run controlled before/after experiments and show which specific
+change moved the mention rate, with the AI responses as evidence. Going deep in one
+consumer category turns that into a dataset they don't have and can't clone without
+running the same experiments for the same months.
 
-**Q: What about Peec, Otterly, AthenaHQ, BrightEdge, Semrush?**
-Peec and Otterly are mid-market measurement plays — same gap as Profound.
-BrightEdge and Semrush are SEO incumbents bolting on AI modules; they have
-distribution but their architecture is Google-first. We assume Semrush ships
-a competitor in 6–12 months. Our advantage is depth and dataset by then.
+**Q: Isn't "causal" impossible given model non-determinism?**
+Not impossible, but noisy, and I won't pretend otherwise. I run many trials per
+query, hold out queries I didn't optimize to show the effect is specific not global,
+and report mention rate as a distribution with confidence, not a single number. The
+noise is itself an interesting measurement problem.
 
-**Q: Why not vertical?**
-We stay horizontal because the buyer profile is consistent across mid-market
-consumer brands and the underlying probing infrastructure is the same. If we
-lean by category in marketing, we lean into consumer products — clothing,
-beauty, cosmetics, food — because that is where consumer LLM-query volume
-concentrates.
+**Q: Why mid-market DTC consumer brands?**
+Every competitor's case studies are B2B SaaS — CRMs, Ramp, Carta, Webflow. Consumer
+brands (footwear, beauty, food) are absent from their proof, the buyer already has an
+SEO budget, and consumer LLM-query volume is highest there.
 
-**Q: Why now and not 18 months ago?**
-18 months ago LLMs were not a meaningful part of the buying journey. Today
-they are. Brands are being asked by their CEOs what they are doing about
-ChatGPT. The buyer exists today with budget today.
+**Q: What stops Profound from doing this?**
+Nothing structural — they could. The defense is category density: a causal dataset
+for one consumer category compounds with every experiment and isn't copyable by
+shipping a feature. First and deepest in a category wins.
 
-**Q: What if Google launches this for Gemini?**
-They will, for Gemini. Brands need cross-model visibility, and Google has
-zero history of providing neutral competitive-intelligence tooling between
-their own products and rivals. Neutrality is a structural advantage we have
-that no LLM company can match.
+**Q: How does this change marketing itself?**
+Content stops being written for humans and starts being written for model ingestion.
+Over the slow loop, brands that invest don't just rank — they shape what the model
+believes about a category, which consumers then receive as neutral advice. The tool
+that proves and discloses that influence is the honest version of this product.
 
-**Q: How do you handle model non-determinism?**
-We don't measure a single response. We run multiple trials per query across
-four models and surface a probability distribution. The metric is mention
-rate over many trials, not "did you appear in this one response."
-
-**Q: How do you stay neutral if you sell action-as-a-service?**
-Brand-paid only. No money from any LLM company. No affiliate or referral
-commissions. Our methodology is public. We never sell ranking position in
-our own index. Every recommendation cites the actual LLM responses that
-produced it.
-
-**Q: First customer plan?**
-Cold outreach plus warm intros to heads of SEO at mid-market consumer
-brands. Free audit as the wedge — we run the queries, deliver a one-page
-LLM-visibility report, convert the strongest fits into paid pilots.
+**Q: What's the business model?**
+SaaS, brand-paid only, mid-market consumer brands. Pricing to be tested; the near
+goal is a willing test case and a proven causal lift, not revenue.
 
 ---
 
 ## Things to say if you have extra time
 
-- We are not training a model. We are measuring what trained models do and
-  then changing what brands publish so the next response cycle is better.
-- Every change we ship teaches us a cross-brand pattern. The recommendations
-  get sharper every month.
-- The buyer is the head of SEO or head of brand marketing. They have budget
-  today. They are being asked by their CEO about ChatGPT today.
+- I'm not training a model. I measure what trained models do, change what brands
+  publish, and prove the lift across probe cycles.
+- The neutrality stance isn't marketing — it's the only credible posture for a layer
+  that shapes what consumers get recommended, and it's structurally closed to any
+  LLM company.
+- The most defensible asset is the causal playbook per category. Measurement is the
+  commodity; proof is the moat.

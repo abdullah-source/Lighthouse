@@ -95,3 +95,35 @@ modules. The greenfield framing from this morning was wrong. We need a wedge.
 **Implication for Friday pitch:** acknowledge Profound by name. Lead with the
 action wedge. Mention neutrality explicitly. Drop the "first to fill the vacuum"
 language — replace with "Profound monitors; we act."
+
+---
+
+## June 1, 2026 — competitive reality check + differentiator pivot
+
+Ran a live scrape of Profound, Peec, and AirOps (see `06_competitor_benchmark.md`).
+The May 20 framing above is wrong now:
+
+- **"Profound monitors; we act" is dead.** Profound ships agents + CMS publish.
+  AirOps' whole product is Insights → Action → Measure with an agent (Quill) that
+  drafts and executes under approval gates. The "action wedge" — and the later
+  "GitHub for marketing / one-click push" idea — is the incumbents' current product.
+- **Neutrality** is marketed by nobody; it's not a wedge as copy. Keep it only as an
+  earned ethical stance.
+- **Measurement is commoditizing.** All three show near-identical visibility
+  dashboards.
+
+**New differentiator (decided this session):** proven **causal lift**, deep in one
+consumer/DTC category. Measurement is the commodity; proving which specific change
+*caused* the AI to recommend you — and compounding that into a category-dense dataset
+— is the moat. Spine: the **dual-loop** framing (fast retrieval loop / slow training
+loop) and the professor's question about how this reshapes what consumers are
+recommended.
+
+**Segment confirmed:** mid-market DTC consumer brands (footwear, beauty, food) —
+absent from every competitor's case studies (all B2B SaaS).
+
+**Reality on stakes:** this is the Eship Studio professor pitch, **no funding** — so
+the bar is an honest, defensible thesis, not surviving an investor naming AirOps.
+
+**Next:** revised pitch in `01_friday_pitch_green.md`; demo experiment in
+`07_demo_experiment_spec.md` (build on the v0 by June 5).
