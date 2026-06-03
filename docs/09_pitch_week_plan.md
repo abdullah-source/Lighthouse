@@ -48,8 +48,10 @@ Cheyenne's **Tualmi** pitch (concentrated, funder-facing).
 - [ ] **Rehearse + time** to ~5:00; nail the "how is this not AirOps?" answer.
 
 ### P2 — strongly wanted
-- [ ] **Decide the segment** (B2B SaaS niche vs one DTC category). One slide; affects
-      user stories + feasibility. Lean B2B-SaaS-niche for the pilot.
+- [x] **Segment LOCKED (June 2): DTC**, narrowed to "$10–100M ARR, no dedicated SEO
+      hire." Buyer exploration confirmed DTC; PR/IR/hospitality/higher-ed parked as
+      fallbacks (doc 10). Remaining: pick the specific test brands + write the
+      user-story / feasibility slides around this buyer.
 - [ ] **Write up the "cleaner framing"** for ZD (he asked): causal proof + fast/slow
       dual-loop + the consumer-choice-set point. A short note/section.
 - [ ] **Honest competition slide:** name Profound/AirOps, show the causal-proof gap.

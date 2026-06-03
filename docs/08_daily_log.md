@@ -88,3 +88,17 @@ locked.
 
 **To share with ZD:** the cleaner framing (causal proof + fast/slow dual-loop + the
 consumer-choice-set point). He asked for it.
+
+**Buyer exploration (afternoon).** Ran the CEO buyer-vertical exploration triggered by
+`10_strategic_exploration.txt` (Lever A — change the buyer). Honest finding: **no
+adjacent lane is empty in June 2026.** Meltwater ships a "GenAI Lens" and Bluefish AI
+is a focused PR-reputation startup; Q4 launched "AEO for IR Web" (Mar 2026); Birdeye /
+Yext are in local. So changing the buyer doesn't escape competition — it just changes
+which incumbent you face (Cision/Meltwater/Bluefish/Q4 instead of Profound/AirOps).
+The durable edge stays **depth (causal / citation rigor), not buyer** — incumbents
+bolt on a "lens" but don't do share-of-citation or what-moves-it well.
+
+**Decision:** stay with **DTC**, narrowed to "$10–100M ARR, no dedicated SEO hire."
+PR / IR / hospitality / higher-ed explored and **parked** as documented fallbacks in
+doc 10. Keep the v0 framing-agnostic ("entity, category") regardless, so the buyer
+stays a cheap two-way door.
