@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GEO · Brand Visibility for the LLM Era · Pitch</title>
+<style>
+  :root{
+    --bg:#0a0c10; --ink:#e8edf4; --muted:#9aa6b6;
+    --accent:#5eead4; --accent2:#7c9cff; --warn:#fbbf24; --bad:#fb7185; --good:#34d399;
+    --card:#141925; --line:#222a39; --radius:18px; --maxw:1120px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:radial-gradient(1200px 800px at 70% -10%, #131a2a 0%, var(--bg) 55%);
+    color:var(--ink); font:400 18px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; overflow:hidden;
+  }
+  #bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;z-index:50;transition:width .35s ease}
+  #counter{position:fixed;bottom:18px;right:22px;color:var(--muted);font-size:13px;letter-spacing:.08em;z-index:50}
+  #hint{position:fixed;bottom:18px;left:22px;color:var(--muted);font-size:12.5px;z-index:50;opacity:.8}
+  kbd{background:#1b2230;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px;font-size:11px;color:var(--ink)}
+  .slide{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:6vh 6vw}
+  .slide.active{display:flex;animation:in .5s cubic-bezier(.2,.7,.2,1)}
+  @keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .wrap{width:100%;max-width:var(--maxw)}
+  .tag{display:inline-block;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);border:1px solid var(--line);background:#0f1620;padding:5px 11px;border-radius:999px;margin-bottom:22px}
+  h1{font-size:clamp(34px,6.2vw,72px);line-height:1.04;margin:0 0 14px;letter-spacing:-.02em;font-weight:700}
+  h2{font-size:clamp(26px,4.4vw,46px);line-height:1.08;margin:0 0 18px;letter-spacing:-.02em;font-weight:680}
+  .lede{font-size:clamp(18px,2.3vw,25px);color:var(--ink);max-width:900px}
+  .muted{color:var(--muted)} .accent{color:var(--accent)} .accent2{color:var(--accent2)}
+  p{margin:0 0 14px}
+  ul{margin:10px 0 0;padding:0;list-style:none}
+  li{position:relative;padding:9px 0 9px 30px;font-size:clamp(16px,2vw,21px);border-bottom:1px solid #161d29}
+  li:last-child{border-bottom:0}
+  li:before{content:"";position:absolute;left:4px;top:18px;width:9px;height:9px;border-radius:3px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .grid{display:grid;gap:18px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  .cols-3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.cols-2,.cols-3{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,var(--card),#0f131c);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px}
+  .card h3{margin:0 0 8px;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .kpi{font-size:clamp(26px,3.6vw,40px);font-weight:760;letter-spacing:-.02em}
+  .bar{height:28px;border-radius:8px;background:#1a2230;position:relative;overflow:hidden;margin:7px 0}
+  .bar>span{position:absolute;inset:0 auto 0 0;width:0;border-radius:8px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .9s cubic-bezier(.2,.7,.2,1) .15s}
+  .bar.good>span{background:linear-gradient(90deg,#10b981,var(--good))}
+  .bar.bad>span{background:linear-gradient(90deg,#9f1239,var(--bad))}
+  .barrow{display:grid;grid-template-columns:150px 1fr 60px;align-items:center;gap:14px;margin:6px 0;font-size:15px}
+  .barrow .v{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  @media(max-width:820px){.barrow{grid-template-columns:110px 1fr 50px}}
+  .pill{display:inline-block;font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 11px;margin:4px 6px 0 0}
+  .now{border-color:#1f5145;color:var(--good)} .next{border-color:#3a3357;color:#c4b5fd}
+  .flow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .step{flex:1;min-width:140px;background:#0f1420;border:1px solid var(--line);border-radius:12px;padding:14px}
+  .step .s{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  .arrow{align-self:center;color:var(--muted);font-size:22px}
+  .loop{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+  @media(max-width:820px){.loop{grid-template-columns:1fr}}
+  .edge{border:1px solid #1f5145;background:linear-gradient(180deg,#0c1a16,#0f131c)}
+  .note{position:fixed;left:0;right:0;bottom:0;background:#0c0f16;border-top:1px solid var(--line);color:var(--muted);font-size:14px;line-height:1.5;padding:14px 22px 16px;display:none;z-index:40;max-height:42vh;overflow:auto}
+  .note.show{display:block}
+  .note b{color:var(--accent)}
+  .time{position:fixed;top:14px;right:22px;color:var(--muted);font-size:12.5px;letter-spacing:.06em;z-index:50}
+  .foot{margin-top:18px;color:var(--muted);font-size:14.5px}
+  .em{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="time" id="time"></div>
+<div id="counter"></div>
+<div id="hint"><kbd>&rarr;</kbd> next · <kbd>&larr;</kbd> back · <kbd>F</kbd> fullscreen · <kbd>N</kbd> notes</div>
+
+<!-- 1 TITLE -->
+<section class="slide active" data-time="0:00" data-note="This pitch is about trajectory, where this goes. Open with the product and the direction, not a claim of what is finished.">
+  <div class="wrap">
+    <span class="tag">Pitch</span>
+    <h1>What does AI tell<br>people to buy?</h1>
+    <p class="lede">Generative Engine Optimization. Measure what AI recommends today, and <span class="accent">act on it tomorrow</span>. Here is where this is going.</p>
+    <p class="foot">Brand Visibility for the LLM Era · Abdullah Ali · Summer Startup 2026</p>
+  </div>
+</section>
+
+<!-- 2 THE SHIFT -->
+<section class="slide" data-time="0:25" data-note="Hook. Picked equals sale. Not picked equals you do not exist for that buyer. Buying intent is moving from Google to LLMs and brands are blind to it.">
+  <div class="wrap">
+    <span class="tag">The shift</span>
+    <h2>Consumers stopped Googling.<br>They ask ChatGPT.</h2>
+    <p class="lede">Ask an assistant "what is the best product for me" and it names three brands. If you are one of them, you get the sale. If you are not, <span class="accent">you do not exist for that buyer.</span></p>
+    <ul>
+      <li>SEO is becoming <span class="em">GEO</span>. Optimizing to be picked by AI, not ranked by Google.</li>
+      <li>Brands cannot see whether AI recommends them, who it picks instead, or what to change.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 3 MARKET + HONEST COMPETITION -->
+<section class="slide" data-time="0:55" data-note="Be honest. Profound, AirOps, Peec are funded and good. They measure and publish now. So the question is not is this a market, it is which approach wins, and why now.">
+  <div class="wrap">
+    <span class="tag">Honest about the market</span>
+    <h2>There is already a category.</h2>
+    <div class="grid cols-3">
+      <div class="card"><h3>Profound</h3><p class="muted">Full stack platform. Agents publish to WordPress, Sanity, Contentful.</p></div>
+      <div class="card"><h3>AirOps</h3><p class="muted">Insights, Action, Measure, with an agent (Quill) that drafts and executes.</p></div>
+      <div class="card"><h3>Peec</h3><p class="muted">Clean self serve visibility tracking for marketing teams.</p></div>
+    </div>
+    <p class="foot">They are funded, and they act too. So the question is not <span class="muted">"is this a market."</span> It is <span class="accent em">"which approach wins, and why now."</span></p>
+  </div>
+</section>
+
+<!-- 4 WHY THIS VS THAT -->
+<section class="slide" data-time="1:25" data-note="Core thesis. Market positioning is a variable. Any narrative can be copied, outspent, or shifted, by us or by a rival. So we do not bet on a market story. We bet on execution: a working engine, plus the rigor that makes the numbers trustworthy. Market is an input we can change. Execution is what compounds.">
+  <div class="wrap">
+    <span class="tag">Why this, not that</span>
+    <h2>Bet on execution, not on market position.</h2>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Market is a variable</h3>
+        <p>Position, segment, and messaging can all be shifted, by us or by a funded rival. Any market story can be copied or outspent. Betting the product on it is fragile.</p>
+      </div>
+      <div class="card">
+        <h3>Execution is the constant</h3>
+        <p>A working engine today, plus a <span class="accent em">causal experiment</span> that proves what moves a recommendation, plus the rigor that makes the numbers trustworthy. Hard to copy, and deeper every week.</p>
+      </div>
+    </div>
+    <p class="foot">So the focus shifts from market to execution. The market is an input we can change without changing the engine.</p>
+  </div>
+</section>
+
+<!-- 5 WHAT RUNS TODAY (v0, honest) -->
+<section class="slide" data-time="1:55" data-note="Honest about today. This is v0 and it runs. A Python engine: probe the models, parse responses into structured data, report. SQLite. No frontend yet, nothing deployed yet. GPT-5 and Claude today, Gemini and Perplexity next. Do not overclaim.">
+  <div class="wrap">
+    <span class="tag">What runs today · v0</span>
+    <h2>The engine works. This is real.</h2>
+    <div class="flow">
+      <div class="step"><div class="s">Probe</div><p style="margin:6px 0 0">Real buyer queries, many trials each.</p></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step"><div class="s">Parse</div><p style="margin:6px 0 0">Brands named, position, sentiment.</p></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step"><div class="s">Report</div><p style="margin:6px 0 0">Mention rate, share of voice, by model.</p></div>
+    </div>
+    <p class="foot" style="margin-top:18px">
+      Honest status: a Python engine plus SQLite, runs from the command line.
+      <span class="muted">Frontend and deployment are this week.</span><br>
+      Models today: <span class="pill now">GPT-5 now</span><span class="pill now">Claude now</span><span class="pill next">Gemini next</span><span class="pill next">Perplexity next</span>
+    </p>
+  </div>
+</section>
+
+<!-- 6 REAL DATA -->
+<section class="slide" data-time="2:25" data-note="Real data, run today, on real brands. Allbirds: 77.5 percent mention rate, average position 1.74, recommended near the top. Competitors Veja, Rothy's, Cariuma. And the models disagree: on ankle pain shoes GPT-5 recommends Hoka 50 percent, Claude 30 percent. That disagreement is signal brands cannot see today. This is our own probe data, not customer data.">
+  <div class="wrap">
+    <span class="tag">Real data · run today</span>
+    <h2>What the models actually say</h2>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Allbirds · sustainable footwear</h3>
+        <div class="barrow"><span>Allbirds</span><div class="bar good"><span data-w="100"></span></div><span class="v">77%</span></div>
+        <div class="barrow"><span>Veja</span><div class="bar"><span data-w="78"></span></div><span class="v">60%</span></div>
+        <div class="barrow"><span>Rothy's</span><div class="bar"><span data-w="65"></span></div><span class="v">50%</span></div>
+        <div class="barrow"><span>Cariuma</span><div class="bar"><span data-w="45"></span></div><span class="v">35%</span></div>
+        <p class="foot" style="margin-top:10px">Avg position 1.74. Named near the top.</p>
+      </div>
+      <div class="card">
+        <h3>The models disagree · "shoes for ankle pain"</h3>
+        <p class="muted" style="margin-bottom:12px">How often each recommends <span class="em" style="color:var(--ink)">Hoka</span>:</p>
+        <div class="barrow"><span>GPT-5</span><div class="bar good"><span data-w="100"></span></div><span class="v">50%</span></div>
+        <div class="barrow"><span>Claude</span><div class="bar"><span data-w="60"></span></div><span class="v">30%</span></div>
+        <p class="foot" style="margin-top:14px">Visibility is not one number. That split is signal brands are blind to today.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 THE BROOKS ISSUE + SOLUTION COMING -->
+<section class="slide" data-time="2:55" data-note="The Brooks issue, told honestly. In a real run, the parser returned Brooks and Brooks Adrenaline GTS 23 as two different brands, so the count was split and the mention rate was understated. We caught it. The solution this week: a normalization pass plus a canonical brand name, so every variant maps to one brand before we aggregate. Why it matters: if you cannot resolve that, every number downstream is noise. This is the rigor that earns the causal claim.">
+  <div class="wrap">
+    <span class="tag">The issue we caught · fix this week</span>
+    <h2>Rigor is the product.</h2>
+    <p class="lede">In a real run, the parser counted <span class="em">"Brooks"</span> and <span class="em">"Brooks Adrenaline GTS 23"</span> as two different brands. The count split, the mention rate was understated.</p>
+    <div class="grid cols-2" style="margin-top:8px">
+      <div class="card"><h3>The problem</h3><p class="muted">LLMs name the same brand many ways: "Brooks," "Brooks Running," "Brooks Adrenaline." Naive aggregation treats them as different brands and the data lies.</p></div>
+      <div class="card"><h3>The solution, this week</h3><p class="muted">A normalization pass plus a canonical brand name. Every variant maps to one brand before we count. Then tests, so it can never silently return.</p></div>
+    </div>
+    <p class="foot"><span class="accent em">If you cannot resolve "Brooks" vs "Brooks Running," every number downstream is noise.</span> This is the depth that earns the causal claim.</p>
+  </div>
+</section>
+
+<!-- 8 V1 BY END OF WEEK -->
+<section class="slide" data-time="3:25" data-note="Trajectory, not a claim. By Friday, v1 will add three things on top of the working engine. One: the causal experiment, baseline, one change, re-probe, measured lift, with holdouts. Two: the entity normalization fix. Three: a simple results view, the first frontend. Be clear this is what v1 WILL be by end of week, not what exists now.">
+  <div class="wrap">
+    <span class="tag">Trajectory · v1 by Friday</span>
+    <h2>What v1 looks like by end of week.</h2>
+    <ul>
+      <li><span class="em">Causal experiment.</span> Baseline, make one change, re-probe, measure the lift, with holdout queries to prove the lift is real and not noise.</li>
+      <li><span class="em">Entity normalization fix.</span> The Brooks solution, shipped and tested.</li>
+      <li><span class="em">A results view.</span> The first frontend: baseline vs treatment and the AI responses as evidence.</li>
+    </ul>
+    <p class="foot">On top of the engine that already runs. This is the week, not a someday.</p>
+  </div>
+</section>
+
+<!-- 9 THE EDGE: ACTION AFTER THE DATA -->
+<section class="slide" data-time="3:55" data-note="The edge, framed as the NEXT build. Measurement is commoditizing. The value is what you DO after the data, and ours is one seamless click: from a proven finding to a live change, no back and forth, no friction. Three things. Fast: minutes not a project. Reliable: grounded in the causal data, cited to the AI responses. Seamless: one click from insight to published change. Key point: the differentiator is NOT the click, competitors push too. It is that our action runs on PROVEN causal lift, not guesses. Be ready to say this ships after v1.">
+  <div class="wrap">
+    <span class="tag">The edge we are building · action after the data</span>
+    <h2>The value is what you do after you see the data.</h2>
+    <p class="lede" style="margin-bottom:16px">Measurement is becoming a commodity. The edge is action that is fast, reliable, and one seamless click:</p>
+    <div class="grid cols-3">
+      <div class="card edge"><h3 style="color:var(--good)">Fast</h3><p>From a finding to a published change in minutes, not a project.</p></div>
+      <div class="card edge"><h3 style="color:var(--good)">Reliable</h3><p>Grounded in the causal data and cited to the actual AI responses behind it.</p></div>
+      <div class="card edge"><h3 style="color:var(--good)">Seamless</h3><p>One click from insight to a live change. No back and forth, no friction.</p></div>
+    </div>
+    <p class="foot">Profound and AirOps push content too. The difference: our action runs on <span class="accent em">proven causal lift, not guesses</span>, and it ships in one click. Insight to impact, no friction.</p>
+  </div>
+</section>
+
+<!-- 10 GO TO MARKET -->
+<section class="slide" data-time="4:25" data-note="What go to market looks like. Who: mid-market DTC consumer brands, 10 to 100M revenue, a marketing team but no dedicated SEO hire. How: audit as wedge, a free visibility report is the hook, then a pilot, then paid. Price: 1 to 3k per month, brand paid only.">
+  <div class="wrap">
+    <span class="tag">Go to market</span>
+    <h2>How this reaches customers.</h2>
+    <div class="grid cols-3">
+      <div class="card"><h3>Who</h3><p>Mid-market <span class="em" style="color:var(--ink)">DTC consumer brands</span>, $10 to $100M revenue, marketing team but no dedicated SEO hire.</p></div>
+      <div class="card"><h3>How</h3><p><span class="em" style="color:var(--ink)">Audit as wedge.</span> A free AI-visibility report is the hook, then a pilot, then paid.</p></div>
+      <div class="card"><h3>Price</h3><div class="kpi">$1 to 3k</div><p class="muted">per brand / month. Brand paid only.</p></div>
+    </div>
+    <p class="foot">The free audit runs on the engine that already works. The report is the first thing a prospect sees.</p>
+  </div>
+</section>
+
+<!-- 11 MOAT / TRAJECTORY -->
+<section class="slide" data-time="4:40" data-note="Where this goes. Every experiment compounds into a proprietary dataset of what actually moves AI recommendations in one category. A data network effect, not copyable by shipping a feature. Two timescales: fast retrieval loop in days, slow training loop over months. Stance: neutral, evidence first, brand paid only. Honest, today it is a thesis, the dataset is the bet.">
+  <div class="wrap">
+    <span class="tag">Where this goes</span>
+    <h2>The compounding asset</h2>
+    <p class="lede">Every experiment compounds into a proprietary dataset of <span class="accent">what actually moves AI recommendations</span> in one category. A data network effect a competitor cannot copy by shipping a feature.</p>
+    <div class="loop">
+      <div class="card"><h3 style="color:var(--accent)">Fast loop · days</h3><p class="muted">Retrieval models (Perplexity, ChatGPT search). Change what consumers see this week.</p></div>
+      <div class="card"><h3 style="color:var(--accent2)">Slow loop · months</h3><p class="muted">Base models retrain. Change what the model believes about a category for years.</p></div>
+    </div>
+    <p class="foot">Stance: <span class="em">neutral, evidence first</span>, brand paid only. Honest: today it is a thesis. The dataset is the bet.</p>
+  </div>
+</section>
+
+<!-- 12 ASK / TRAJECTORY CLOSE -->
+<section class="slide" data-time="5:00" data-note="Close on trajectory. The engine runs today, v1 lands this week, action is the edge, and the dataset is the long game. The ask is specific.">
+  <div class="wrap">
+    <span class="tag">Where we are headed</span>
+    <h1>Engine today.<br>v1 this week.</h1>
+    <ul>
+      <li><span class="em">Today:</span> a working engine and real data on real brands.</li>
+      <li><span class="em">This week:</span> causal experiment, the Brooks fix, a results view.</li>
+      <li><span class="em">The edge:</span> one seamless click from a proven finding to a live change. Fast, reliable, no friction.</li>
+    </ul>
+    <p class="foot" style="margin-top:18px">The ask: intros to mid-market DTC brands, and feedback from anyone who has sold to a CMO.</p>
+  </div>
+</section>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const bar=document.getElementById('bar'), counter=document.getElementById('counter'), timeEl=document.getElementById('time');
+  let i=slides.findIndex(s=>s.classList.contains('active')); if(i<0)i=0;
+  const note=document.createElement('div'); note.className='note'; document.body.appendChild(note);
+  let notesOn=false;
+  function animateBars(s){
+    s.querySelectorAll('.bar>span').forEach(b=>{b.style.width='0';requestAnimationFrame(()=>{requestAnimationFrame(()=>{b.style.width=(b.dataset.w||0)+'%';});});});
+  }
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i)/(slides.length-1)*100)+'%';
+    counter.textContent=(i+1)+' / '+slides.length;
+    const s=slides[i];
+    timeEl.textContent='time '+(s.dataset.time||'');
+    note.innerHTML='<b>Speaker note · '+(s.dataset.time||'')+'</b><br>'+(s.dataset.note||'');
+    note.classList.toggle('show',notesOn);
+    animateBars(s);
+  }
+  function next(){show(i+1)} function prev(){show(i-1)}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next();}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+    else if(e.key==='Home'){show(0);} else if(e.key==='End'){show(slides.length-1);}
+    else if(e.key.toLowerCase()==='n'){notesOn=!notesOn;note.classList.toggle('show',notesOn);}
+    else if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+  });
+  document.addEventListener('click',e=>{ if(note.contains(e.target))return; (e.clientX < innerWidth*0.28)?prev():next(); });
+  show(i);
+</script>
+</body>
+</html>
