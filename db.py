@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS responses (
     query_id    INTEGER NOT NULL REFERENCES queries(id),
     model       TEXT NOT NULL,         -- e.g. 'gpt-5' or 'claude-sonnet-4-6'
     raw_text    TEXT NOT NULL,
+    citations   TEXT,                  -- JSON array of {url, title} for retrieval engines
     created_at  TEXT NOT NULL
 );
 
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS parsed_responses (
     response_id         INTEGER NOT NULL UNIQUE REFERENCES responses(id),
     brands_mentioned    TEXT NOT NULL,  -- JSON array: ["Allbirds", "Hoka"]
     positions           TEXT NOT NULL,  -- JSON object: {"Allbirds": 3, "Hoka": 1}
+    descriptors         TEXT,           -- JSON object: {"Hoka": ["cushioned","plush"]}
     parsed_at           TEXT NOT NULL
 );
 
@@ -123,10 +125,17 @@ def insert_query(conn: sqlite3.Connection, brand_id: int, query_text: str) -> in
     return cur.lastrowid
 
 
-def insert_response(conn: sqlite3.Connection, query_id: int, model: str, raw_text: str) -> int:
+def insert_response(
+    conn: sqlite3.Connection,
+    query_id: int,
+    model: str,
+    raw_text: str,
+    citations: list | None = None,
+) -> int:
     cur = conn.execute(
-        "INSERT INTO responses (query_id, model, raw_text, created_at) VALUES (?, ?, ?, ?)",
-        (query_id, model, raw_text, _now()),
+        "INSERT INTO responses (query_id, model, raw_text, citations, created_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (query_id, model, raw_text, json.dumps(citations or []), _now()),
     )
     return cur.lastrowid
 
@@ -136,16 +145,17 @@ def insert_parsed(
     response_id: int,
     brands_mentioned: list[str],
     positions: dict[str, int],
+    descriptors: dict[str, list[str]] | None = None,
 ) -> int:
     """
-    Store the parser's output. JSON-encode the list and dict so we can
-    fit them into TEXT columns. SQLite has JSON1 functions if we later
-    want to query inside them, but for v0 we just deserialize at read time.
+    Store the parser's output. JSON-encode the structures so they fit into
+    TEXT columns. `descriptors` holds the per-brand 'verbal vibe' terms.
     """
     cur = conn.execute(
-        "INSERT INTO parsed_responses (response_id, brands_mentioned, positions, parsed_at) "
-        "VALUES (?, ?, ?, ?)",
-        (response_id, json.dumps(brands_mentioned), json.dumps(positions), _now()),
+        "INSERT INTO parsed_responses (response_id, brands_mentioned, positions, "
+        "descriptors, parsed_at) VALUES (?, ?, ?, ?, ?)",
+        (response_id, json.dumps(brands_mentioned), json.dumps(positions),
+         json.dumps(descriptors or {}), _now()),
     )
     return cur.lastrowid
 
@@ -179,11 +189,31 @@ def fetch_unparsed_responses(conn: sqlite3.Connection, brand_id: int) -> list[sq
     ).fetchall()
 
 
+def fetch_citations_for_brand(conn: sqlite3.Connection, brand_id: int) -> list[sqlite3.Row]:
+    """
+    Every response for a brand that carried cited sources (retrieval engines
+    only). Used to build the source-provenance view: which pages the AI trusts
+    in this category.
+    """
+    return conn.execute(
+        """
+        SELECT r.model, r.citations
+        FROM responses r
+        JOIN queries q ON q.id = r.query_id
+        WHERE q.brand_id = ?
+          AND r.citations IS NOT NULL
+          AND r.citations != ''
+          AND r.citations != '[]'
+        """,
+        (brand_id,),
+    ).fetchall()
+
+
 def fetch_parsed_for_brand(conn: sqlite3.Connection, brand_id: int) -> list[sqlite3.Row]:
     """All parsed responses for a brand. Used by report.py to aggregate."""
     return conn.execute(
         """
-        SELECT r.id AS response_id, r.model, p.brands_mentioned, p.positions
+        SELECT r.id AS response_id, r.model, p.brands_mentioned, p.positions, p.descriptors
         FROM parsed_responses p
         JOIN responses r ON r.id = p.response_id
         JOIN queries q ON q.id = r.query_id

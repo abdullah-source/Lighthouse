@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="470" viewBox="0 0 1120 470" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#7dd3fc"/>
+    </marker>
+    <marker id="arrowGold" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#fbbf24"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1120" height="470" fill="#0b0f17"/>
+
+  <text x="40" y="42" fill="#e5e7eb" font-size="22" font-weight="700">Sharpened workflow — measure where you lose, prove what moves it</text>
+  <text x="40" y="66" fill="#94a3b8" font-size="13">Same idea, sharper edge. Gold = our differentiator (off-site "why" + causal proof).</text>
+
+  <!-- causal proof feedback loop -->
+  <path d="M990,140 C990,86 345,86 345,140" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="2 0" marker-end="url(#arrowGold)"/>
+  <text x="667" y="80" fill="#fbbf24" font-size="12.5" font-weight="600" text-anchor="middle">causal proof loop  ·  re-measure the same frozen panel</text>
+
+  <!-- stage boxes -->
+  <!-- 1 INGEST -->
+  <rect x="40" y="140" width="180" height="175" rx="12" fill="#111827" stroke="#38bdf8" stroke-width="1.4"/>
+  <text x="54" y="168" fill="#7dd3fc" font-size="14" font-weight="700">1 · INGEST</text>
+  <text x="54" y="192" fill="#cbd5e1" font-size="11.5"><tspan x="54" dy="0">Brand + competitors</tspan><tspan x="54" dy="15">+ first-party VoC</tspan><tspan x="54" dy="15">(reviews, tickets,</tspan><tspan x="54" dy="15">search logs)</tspan><tspan x="54" dy="15">→ individualised,</tspan><tspan x="54" dy="15">frozen query panel</tspan></text>
+
+  <!-- 2 MEASURE -->
+  <rect x="255" y="140" width="180" height="175" rx="12" fill="#111827" stroke="#38bdf8" stroke-width="1.4"/>
+  <text x="269" y="168" fill="#7dd3fc" font-size="14" font-weight="700">2 · MEASURE</text>
+  <text x="269" y="192" fill="#cbd5e1" font-size="11.5"><tspan x="269" dy="0">Real engines,</tspan><tspan x="269" dy="15">retrieval ON</tspan><tspan x="269" dy="15">(Perplexity etc.)</tspan><tspan x="269" dy="15">→ rate, position,</tspan><tspan x="269" dy="15">SoV, sentiment,</tspan><tspan x="269" dy="15">+ cited sources</tspan></text>
+
+  <!-- 3 DIAGNOSE (differentiator) -->
+  <rect x="470" y="140" width="180" height="175" rx="12" fill="#1c1605" stroke="#fbbf24" stroke-width="1.8"/>
+  <text x="484" y="168" fill="#fbbf24" font-size="14" font-weight="700">3 · DIAGNOSE</text>
+  <text x="484" y="192" fill="#fde68a" font-size="11.5"><tspan x="484" dy="0">Off-site citation</tspan><tspan x="484" dy="15">provenance:</tspan><tspan x="484" dy="15">which sources the</tspan><tspan x="484" dy="15">AI cited — and</tspan><tspan x="484" dy="15">where you're</tspan><tspan x="484" dy="15">absent (the "why")</tspan></text>
+
+  <!-- 4 ACT -->
+  <rect x="685" y="140" width="180" height="175" rx="12" fill="#111827" stroke="#38bdf8" stroke-width="1.4"/>
+  <text x="699" y="168" fill="#7dd3fc" font-size="14" font-weight="700">4 · ACT</text>
+  <text x="699" y="192" fill="#cbd5e1" font-size="11.5"><tspan x="699" dy="0">Targeted change</tspan><tspan x="699" dy="15">+ off-site source</tspan><tspan x="699" dy="15">target list</tspan><tspan x="699" dy="15">(a consequence of</tspan><tspan x="699" dy="15">the why, not</tspan><tspan x="699" dy="15">generic content)</tspan></text>
+
+  <!-- 5 PROVE (differentiator) -->
+  <rect x="900" y="140" width="180" height="175" rx="12" fill="#1c1605" stroke="#fbbf24" stroke-width="1.8"/>
+  <text x="914" y="168" fill="#fbbf24" font-size="14" font-weight="700">5 · PROVE</text>
+  <text x="914" y="192" fill="#fde68a" font-size="11.5"><tspan x="914" dy="0">Causal lift:</tspan><tspan x="914" dy="15">hold frozen panel,</tspan><tspan x="914" dy="15">re-measure,</tspan><tspan x="914" dy="15">attribute the</tspan><tspan x="914" dy="15">delta to the</tspan><tspan x="914" dy="15">change</tspan></text>
+
+  <!-- forward arrows -->
+  <line x1="221" y1="228" x2="253" y2="228" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="436" y1="228" x2="468" y2="228" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="651" y1="228" x2="683" y2="228" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="866" y1="228" x2="898" y2="228" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ASK bar -->
+  <rect x="40" y="360" width="1040" height="66" rx="12" fill="#0f172a" stroke="#475569" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="60" y="389" fill="#e2e8f0" font-size="14" font-weight="700">ASK</text>
+  <text x="60" y="409" fill="#94a3b8" font-size="12.5">Agent / search bar grounded in the brand's own measurement data — used throughout the loop (the surface the marketing team works in).</text>
+
+  <!-- connectors from each box down to ASK bar -->
+  <line x1="130" y1="315" x2="130" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <line x1="345" y1="315" x2="345" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <line x1="560" y1="315" x2="560" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <line x1="775" y1="315" x2="775" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <line x1="990" y1="315" x2="990" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+</svg>

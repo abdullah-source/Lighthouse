@@ -52,8 +52,24 @@ _EXTRACT_TOOL = {
                 ),
                 "additionalProperties": {"type": "integer"},
             },
+            "descriptors": {
+                "type": "object",
+                "description": (
+                    "The 'verbal vibe' for each brand: the descriptive words or "
+                    "short phrases the response actually used to characterize it "
+                    "(qualities, attributes, use-cases, sentiments). Lowercase, "
+                    "1-2 words each, taken from or faithful to the text. Example: "
+                    "{'Hoka': ['cushioned', 'plush', 'recovery'], "
+                    "'Brooks': ['stability', 'support', 'reliable']}. Only include "
+                    "brands actually described; omit ones merely listed."
+                ),
+                "additionalProperties": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
         },
-        "required": ["brands_mentioned", "positions"],
+        "required": ["brands_mentioned", "positions", "descriptors"],
     },
 }
 
@@ -66,58 +82,66 @@ _PARSE_SYSTEM_PROMPT = (
 
 
 async def _parse_one(
-    client: AsyncAnthropic, response_text: str, semaphore: asyncio.Semaphore
+    client: AsyncAnthropic, response_text: str, semaphore: asyncio.Semaphore, attempts: int = 3
 ) -> dict:
     """
     Run Haiku on one response, return the structured dict.
 
-    Returns: {"brands_mentioned": [...], "positions": {...}}.
-    On error or empty input, returns an empty result instead of raising.
+    Returns: {"brands_mentioned": [...], "positions": {...}, "descriptors": {...}}.
+    Retries transient errors (connection drops, rate limits) with backoff;
+    returns an empty result only after giving up, never raises.
     """
+    empty = {"brands_mentioned": [], "positions": {}, "descriptors": {}}
     if not response_text.strip():
         # If probe.py wrote an empty response (upstream API errored), don't
         # waste an API call trying to parse nothing.
-        return {"brands_mentioned": [], "positions": {}}
+        return empty
 
-    async with semaphore:
+    last = None
+    for i in range(attempts):
         try:
-            response = await client.messages.create(
-                model=MODEL_PARSE,
-                max_tokens=1024,
-                system=_PARSE_SYSTEM_PROMPT,
-                tools=[_EXTRACT_TOOL],
-                # Force the model to call our tool — it cannot reply with text.
-                tool_choice={"type": "tool", "name": "extract_brands"},
-                messages=[{"role": "user", "content": response_text}],
-            )
+            async with semaphore:
+                response = await client.messages.create(
+                    model=MODEL_PARSE,
+                    max_tokens=1024,
+                    system=_PARSE_SYSTEM_PROMPT,
+                    tools=[_EXTRACT_TOOL],
+                    # Force the model to call our tool — it cannot reply with text.
+                    tool_choice={"type": "tool", "name": "extract_brands"},
+                    messages=[{"role": "user", "content": response_text}],
+                )
+            # Find the tool_use block: one will be type="tool_use" with our
+            # extracted data already parsed into a dict.
+            for block in response.content:
+                if block.type == "tool_use" and block.name == "extract_brands":
+                    return block.input
+            return empty  # shouldn't happen given tool_choice
         except Exception as exc:
-            print(f"[parse] API error: {exc}")
-            return {"brands_mentioned": [], "positions": {}}
-
-    # Find the tool_use block. content is a list of blocks; one will be
-    # type="tool_use" with our extracted data already parsed into a dict.
-    for block in response.content:
-        if block.type == "tool_use" and block.name == "extract_brands":
-            return block.input
-
-    # Shouldn't happen given tool_choice, but safe fallback.
-    return {"brands_mentioned": [], "positions": {}}
+            last = exc
+            await asyncio.sleep(1.0 * (i + 1))
+    print(f"[parse] gave up after {attempts} tries: {last}")
+    return empty
 
 
 async def parse_all(
     responses: list[tuple[int, str]],
-) -> list[tuple[int, list[str], dict[str, int]]]:
+) -> list[tuple[int, list[str], dict[str, int], dict[str, list[str]]]]:
     """
     Parse every (response_id, raw_text) tuple in parallel.
 
-    Returns: list of (response_id, brands_mentioned, positions).
+    Returns: list of (response_id, brands_mentioned, positions, descriptors).
     """
     client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
     semaphore = asyncio.Semaphore(PARSE_CONCURRENCY)
 
     async def run_one(response_id: int, text: str):
         result = await _parse_one(client, text, semaphore)
-        return (response_id, result["brands_mentioned"], result["positions"])
+        return (
+            response_id,
+            result["brands_mentioned"],
+            result["positions"],
+            result.get("descriptors", {}),
+        )
 
     tasks = [run_one(rid, text) for rid, text in responses]
     return await asyncio.gather(*tasks)

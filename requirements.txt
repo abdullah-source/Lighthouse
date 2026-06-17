@@ -6,11 +6,18 @@ anthropic>=0.40
 # We use GPT-5 as one of the two LLMs we probe on behalf of the brand.
 openai>=1.50
 
-# httpx — modern async HTTP client. Both SDKs above use it under the hood,
-# but we pin it explicitly so we control the version and can use it directly
-# if we ever need to call an API the SDKs don't cover (e.g. Perplexity later).
+# httpx — modern async HTTP client. Both SDKs above use it under the hood.
+# We also call it directly in probe.py for the Perplexity (Sonar) retrieval
+# probe, because the cited sources live in extra JSON fields the OpenAI SDK
+# would drop.
 httpx>=0.27
 
 # python-dotenv — loads a .env file into environment variables at startup.
 # Lets us keep API keys out of code and out of git.
 python-dotenv>=1.0
+
+# FastAPI — the v1 backend. Async-native, reuses the probe/parse pipeline.
+fastapi>=0.110
+
+# Uvicorn — the ASGI server that runs FastAPI.
+uvicorn[standard]>=0.29

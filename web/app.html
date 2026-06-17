@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>App — Brand Visibility</title>
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="app-body">
+  <nav class="nav">
+    <div class="wrap nav-in" style="max-width:100%">
+      <a class="logo" href="/"><span class="mark"></span> Brand Visibility</a>
+      <div class="nav-cta">
+        <a class="btn btn-ghost btn-sm" href="/">Home</a>
+        <a class="btn btn-ghost btn-sm" id="signin-btn" href="#">Sign in</a>
+        <span id="user-slot" class="cl-hidden"></span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app-shell">
+    <aside class="side">
+      <form id="audit-form" class="newaudit">
+        <h2>Run an audit</h2>
+        <label>Brand
+          <input id="f-brand" type="text" placeholder="Allbirds" autocomplete="off" required />
+          <span class="sublabel">The brand you want to measure.</span>
+        </label>
+        <label>Category
+          <input id="f-category" type="text" placeholder="running shoes" autocomplete="off" required />
+          <span class="sublabel">The product category buyers shop in &mdash; <b>not a question</b>. We turn it into a panel of real buyer queries for you.</span>
+        </label>
+        <div class="ex-chips" id="cat-examples">
+          <span class="ex-chip">running shoes</span>
+          <span class="ex-chip">sustainable footwear</span>
+          <span class="ex-chip">trail running shoes</span>
+          <span class="ex-chip">shoes for ankle pain</span>
+        </div>
+        <label>Your context <span class="opt">optional</span>
+          <textarea id="f-context" rows="4" placeholder="Paste reviews, support tickets, positioning, or how your customers describe the product..."></textarea>
+          <span class="sublabel">Paste your own customer language and we build a <b>grounded panel</b> from how <i>your</i> buyers actually ask &mdash; not generic questions. This is the depth that makes the measurement yours.</span>
+        </label>
+        <button id="run-btn" class="btn btn-primary" type="submit">Run audit</button>
+        <p class="hint">Footwear is the focus vertical for now. Probes GPT-5, Claude &amp; Perplexity (with citations). Grounded panel = 40 queries; generic = 20. ~60-120s.</p>
+      </form>
+      <div class="list-head"><h2>Audits</h2><button id="refresh" class="ghost" title="Refresh">&#x21bb;</button></div>
+      <ul id="brand-list" class="brand-list"></ul>
+    </aside>
+
+    <section id="panel" class="panel">
+      <div class="empty">
+        <div class="empty-mark"></div>
+        <h3>Pick an audit, or run a new one.</h3>
+        <p>You will see mention rate, position, share of voice, the model split, the real competitor set after normalization, and the action wedge.</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="/auth.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

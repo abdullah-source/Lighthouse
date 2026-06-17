@@ -13,7 +13,7 @@ Why synchronous (no asyncio here):
 
 from anthropic import Anthropic
 
-from config import ANTHROPIC_API_KEY, MODEL_QUERY_GEN, QUERIES_PER_BRAND
+from config import ANTHROPIC_API_KEY, MODEL_QUERY_GEN, PANEL_SIZE, QUERIES_PER_BRAND
 
 
 # Prompt design notes:
@@ -100,3 +100,123 @@ def _parse_numbered_list(text: str, expected_count: int) -> list[str]:
         )
 
     return queries
+
+
+# --- Grounded panel generation (v2: depth-based search) ---------------------
+#
+# The generic generator above invents plausible queries from just brand +
+# category. The grounded generator below is the depth differentiator: it reads
+# the brand's OWN context (reviews, support tickets, positioning, customer
+# language) and produces queries that mirror how *this brand's* real buyers ask.
+# It also returns a short seed_summary of the themes it found, so the product
+# can show the team "here is what we read in your context."
+#
+# We use tool-use to force a structured result (seed_summary + intent-tagged
+# queries), the same reliability trick parse.py uses.
+
+_PANEL_TOOL = {
+    "name": "build_panel",
+    "description": (
+        "Produce a short summary of the buyer themes found in the brand's "
+        "context, plus a set of realistic, high-intent buyer queries grounded "
+        "in that context."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "seed_summary": {
+                "type": "string",
+                "description": (
+                    "2-3 sentences naming the buyer intents, personas, "
+                    "objections, and vocabulary you found in the context."
+                ),
+            },
+            "queries": {
+                "type": "array",
+                "description": "The grounded buyer queries.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "intent": {
+                            "type": "string",
+                            "description": (
+                                "One of: discovery, comparison, use_case, "
+                                "budget, persona."
+                            ),
+                        },
+                        "query": {
+                            "type": "string",
+                            "description": "What a real shopper would ask the AI.",
+                        },
+                    },
+                    "required": ["intent", "query"],
+                },
+            },
+        },
+        "required": ["seed_summary", "queries"],
+    },
+}
+
+
+_GROUNDED_SYSTEM_PROMPT = """You are a consumer research analyst. You are given a
+brand, its category, and raw first-party context from the brand (reviews,
+support tickets, positioning, customer language). Produce realistic, high-intent
+buyer queries that real consumers in THIS brand's audience ask AI assistants
+when shopping in the category.
+
+Rules:
+- Ground the queries in the language, use cases, personas, and objections that
+  actually appear in the provided context. Mirror how these specific buyers talk.
+- Do NOT mention the brand name in the queries. These are open queries where the
+  LLM would freely choose what to recommend.
+- Cover a range of intent: discovery, comparison, specific use case, budget,
+  persona. Mix specific with broad.
+- De-duplicate. Each query should be distinct.
+"""
+
+
+def generate_grounded_queries(
+    brand_name: str, category: str, context_text: str, count: int = PANEL_SIZE
+) -> dict:
+    """
+    Generate a context-grounded query panel.
+
+    Returns {"seed_summary": str, "queries": [{"intent": str, "query": str}, ...]}.
+    Raises if the model returns far fewer queries than asked for.
+    """
+    client = Anthropic(api_key=ANTHROPIC_API_KEY)
+
+    # Cap the context we send so a huge paste does not blow the token budget.
+    context_excerpt = context_text.strip()[:12000]
+    user_prompt = (
+        f"Brand we're studying (do NOT mention it in the queries): {brand_name}\n"
+        f"Category: {category}\n"
+        f"Number of queries to produce: {count}\n\n"
+        f"--- BRAND CONTEXT (first-party) ---\n{context_excerpt}\n--- END CONTEXT ---\n\n"
+        f"Call build_panel with a seed_summary and {count} grounded queries."
+    )
+
+    response = client.messages.create(
+        model=MODEL_QUERY_GEN,
+        max_tokens=4096,
+        system=_GROUNDED_SYSTEM_PROMPT,
+        tools=[_PANEL_TOOL],
+        tool_choice={"type": "tool", "name": "build_panel"},
+        messages=[{"role": "user", "content": user_prompt}],
+    )
+
+    for block in response.content:
+        if block.type == "tool_use" and block.name == "build_panel":
+            data = block.input
+            queries = [
+                {"intent": (q.get("intent") or "general").strip(), "query": q["query"].strip()}
+                for q in data.get("queries", [])
+                if q.get("query", "").strip()
+            ]
+            if len(queries) < count // 2:
+                raise ValueError(
+                    f"Grounded gen returned only {len(queries)} queries (wanted {count})."
+                )
+            return {"seed_summary": (data.get("seed_summary") or "").strip(), "queries": queries}
+
+    raise ValueError("Grounded query generation did not return a build_panel tool call.")

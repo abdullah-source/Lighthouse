@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pitch</title>
+<style>
+  :root{
+    --bg:#0b0f17; --panel:#111827; --panel2:#0f172a;
+    --ink:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
+    --teal:#7dd3fc; --teal2:#38bdf8; --gold:#fbbf24; --gold2:#fde68a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:Inter,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .deck{position:relative; height:100vh; width:100vw}
+  .slide{
+    position:absolute; inset:0; display:none;
+    flex-direction:column; justify-content:center;
+    padding:7vh 9vw; opacity:0; transition:opacity .35s ease;
+  }
+  .slide.active{display:flex; opacity:1}
+  .kicker{
+    font-size:13px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--teal); font-weight:700; margin-bottom:18px;
+  }
+  .kicker.gold{color:var(--gold)}
+  h1{font-size:64px; line-height:1.05; font-weight:800; letter-spacing:-.02em}
+  h2{font-size:40px; line-height:1.12; font-weight:800; letter-spacing:-.01em; max-width:18ch}
+  .lead{font-size:20px; color:var(--muted); margin-top:22px; max-width:62ch; line-height:1.5}
+  .big-sub{font-size:24px; color:var(--ink); margin-top:24px; max-width:60ch; line-height:1.45}
+  .accent{color:var(--gold2)}
+  .teal{color:var(--teal)}
+  .cards{display:flex; gap:18px; margin-top:34px; flex-wrap:wrap}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:20px 22px; min-width:210px; flex:1; max-width:300px;
+  }
+  .card.gold{background:#1c1605; border-color:var(--gold)}
+  .card h3{font-size:14px; letter-spacing:.04em; text-transform:uppercase; color:var(--teal); margin-bottom:10px}
+  .card.gold h3{color:var(--gold)}
+  .card p{font-size:15px; color:var(--muted); line-height:1.45}
+  .stats{display:flex; gap:40px; margin-top:36px; flex-wrap:wrap}
+  .stat .v{font-size:46px; font-weight:800; letter-spacing:-.02em}
+  .stat .v.tealv{color:var(--teal)}
+  .stat .l{font-size:14px; color:var(--muted); margin-top:6px; max-width:22ch}
+  .row{display:flex; gap:14px; margin-top:30px; flex-wrap:wrap}
+  .pill{
+    border:1px solid var(--line); border-radius:999px; padding:9px 16px;
+    font-size:14px; color:var(--ink); background:var(--panel2);
+  }
+  .flow{display:flex; align-items:stretch; gap:0; margin-top:34px; flex-wrap:wrap}
+  .step{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:16px 16px; width:185px; position:relative;
+  }
+  .step.gold{background:#1c1605; border-color:var(--gold)}
+  .step .n{font-size:12px; font-weight:700; letter-spacing:.08em; color:var(--teal)}
+  .step.gold .n{color:var(--gold)}
+  .step .t{font-size:16px; font-weight:700; margin:6px 0 8px}
+  .step p{font-size:12.5px; color:var(--muted); line-height:1.4}
+  .arrow{display:flex; align-items:center; color:var(--muted); font-size:22px; padding:0 8px}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:30px; max-width:1000px}
+  .col h3{font-size:15px; letter-spacing:.04em; text-transform:uppercase; margin-bottom:12px}
+  .col.them h3{color:var(--muted)}
+  .col.us h3{color:var(--gold)}
+  .col ul{list-style:none}
+  .col li{font-size:16.5px; color:var(--ink); padding:8px 0 8px 22px; position:relative; line-height:1.4}
+  .col li::before{content:""; position:absolute; left:0; top:15px; width:8px; height:8px; border-radius:50%}
+  .col.them li::before{background:var(--muted)}
+  .col.us li::before{background:var(--gold)}
+  .col.them li{color:var(--muted)}
+  .note{margin-top:26px; font-size:15px; color:var(--muted); max-width:60ch; line-height:1.5}
+  .badge{display:inline-block; font-size:12.5px; color:var(--gold); border:1px solid var(--gold); border-radius:999px; padding:3px 11px; margin-bottom:18px; letter-spacing:.04em}
+  .badge.live{color:var(--teal); border-color:var(--teal2)}
+  /* chrome */
+  .progress{position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--teal2),var(--gold)); transition:width .35s ease; z-index:10}
+  .counter{position:fixed; bottom:22px; right:30px; font-size:13px; color:var(--muted); z-index:10}
+  .dots{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:10}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--line); cursor:pointer; transition:background .2s}
+  .dot.active{background:var(--teal2)}
+  .hint{position:fixed; bottom:22px; left:30px; font-size:12.5px; color:#475569; z-index:10}
+  .footer-brand{position:fixed; top:20px; left:30px; font-size:13px; color:var(--muted); letter-spacing:.04em; z-index:10}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="footer-brand">Brand Visibility for the LLM era</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 -->
+  <section class="slide active">
+    <div class="kicker">Pitch</div>
+    <h1>The console for the<br>LLM era of buying.</h1>
+    <p class="lead">When a shopper asks ChatGPT, Claude, Perplexity, or Gemini what to buy, do you show up, who shows up instead, and why. We measure it, and we prove what moves it.</p>
+  </section>
+
+  <!-- 1b: input / output up front -->
+  <section class="slide">
+    <div class="kicker">What goes in, what comes out</div>
+    <h2>Input and output, in plain terms.</h2>
+    <div class="two">
+      <div class="col them">
+        <h3>Input</h3>
+        <ul>
+          <li>Brand, category, and the competitor set</li>
+          <li>First-party voice of customer: reviews, support tickets, on-site search logs</li>
+          <li>This becomes an individualised, frozen panel of real buyer questions</li>
+        </ul>
+      </div>
+      <div class="col us">
+        <h3>Output</h3>
+        <ul>
+          <li>Where you stand: mention rate, position, share of voice, by engine</li>
+          <li>Who wins each buyer question, and on which model</li>
+          <li>The why: the exact sources the AI cited, and where you are absent</li>
+          <li>A target list of where to go earn presence, and later, proof a change moved it</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1c: the whole loop -->
+  <section class="slide">
+    <div class="kicker">The whole loop</div>
+    <h2 style="margin-bottom:6px">How it fits together.</h2>
+    <div style="width:100%; max-width:1040px; margin-top:8px">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 64 1120 384" style="width:100%; height:auto" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+        <defs>
+          <marker id="arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 Z" fill="#7dd3fc"/></marker>
+          <marker id="arrG" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 Z" fill="#fbbf24"/></marker>
+        </defs>
+        <path d="M990,140 C990,86 345,86 345,140" fill="none" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrG)"/>
+        <text x="667" y="80" fill="#fbbf24" font-size="12.5" font-weight="600" text-anchor="middle">causal proof loop  ·  re-measure the same frozen panel</text>
+
+        <rect x="40" y="140" width="180" height="175" rx="12" fill="#111827" stroke="#38bdf8" stroke-width="1.4"/>
+        <text x="54" y="168" fill="#7dd3fc" font-size="14" font-weight="700">1 · INGEST</text>
+        <text x="54" y="192" fill="#cbd5e1" font-size="11.5"><tspan x="54" dy="0">Brand + competitors</tspan><tspan x="54" dy="15">+ first-party VoC</tspan><tspan x="54" dy="15">(reviews, tickets,</tspan><tspan x="54" dy="15">search logs)</tspan><tspan x="54" dy="15">to an individualised,</tspan><tspan x="54" dy="15">frozen query panel</tspan></text>
+
+        <rect x="255" y="140" width="180" height="175" rx="12" fill="#111827" stroke="#38bdf8" stroke-width="1.4"/>
+        <text x="269" y="168" fill="#7dd3fc" font-size="14" font-weight="700">2 · MEASURE</text>
+        <text x="269" y="192" fill="#cbd5e1" font-size="11.5"><tspan x="269" dy="0">Real engines,</tspan><tspan x="269" dy="15">retrieval ON</tspan><tspan x="269" dy="15">(Perplexity etc.)</tspan><tspan x="269" dy="15">to rate, position,</tspan><tspan x="269" dy="15">SoV, sentiment,</tspan><tspan x="269" dy="15">+ cited sources</tspan></text>
+
+        <rect x="470" y="140" width="180" height="175" rx="12" fill="#1c1605" stroke="#fbbf24" stroke-width="1.8"/>
+        <text x="484" y="168" fill="#fbbf24" font-size="14" font-weight="700">3 · DIAGNOSE</text>
+        <text x="484" y="192" fill="#fde68a" font-size="11.5"><tspan x="484" dy="0">Off-site citation</tspan><tspan x="484" dy="15">provenance:</tspan><tspan x="484" dy="15">which sources the</tspan><tspan x="484" dy="15">AI cited, and</tspan><tspan x="484" dy="15">where you're</tspan><tspan x="484" dy="15">absent (the "why")</tspan></text>
+
+        <rect x="685" y="140" width="180" height="175" rx="12" fill="#111827" stroke="#38bdf8" stroke-width="1.4"/>
+        <text x="699" y="168" fill="#7dd3fc" font-size="14" font-weight="700">4 · ACT</text>
+        <text x="699" y="192" fill="#cbd5e1" font-size="11.5"><tspan x="699" dy="0">Targeted change</tspan><tspan x="699" dy="15">+ off-site source</tspan><tspan x="699" dy="15">target list</tspan><tspan x="699" dy="15">(a consequence of</tspan><tspan x="699" dy="15">the why, not</tspan><tspan x="699" dy="15">generic content)</tspan></text>
+
+        <rect x="900" y="140" width="180" height="175" rx="12" fill="#1c1605" stroke="#fbbf24" stroke-width="1.8"/>
+        <text x="914" y="168" fill="#fbbf24" font-size="14" font-weight="700">5 · PROVE</text>
+        <text x="914" y="192" fill="#fde68a" font-size="11.5"><tspan x="914" dy="0">Causal lift:</tspan><tspan x="914" dy="15">hold frozen panel,</tspan><tspan x="914" dy="15">re-measure,</tspan><tspan x="914" dy="15">attribute the</tspan><tspan x="914" dy="15">delta to the</tspan><tspan x="914" dy="15">change</tspan></text>
+
+        <line x1="221" y1="228" x2="253" y2="228" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="436" y1="228" x2="468" y2="228" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="651" y1="228" x2="683" y2="228" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="866" y1="228" x2="898" y2="228" stroke="#7dd3fc" stroke-width="2" marker-end="url(#arr)"/>
+
+        <rect x="40" y="360" width="1040" height="66" rx="12" fill="#0f172a" stroke="#475569" stroke-width="1.4" stroke-dasharray="6 4"/>
+        <text x="60" y="389" fill="#e2e8f0" font-size="14" font-weight="700">ASK</text>
+        <text x="60" y="409" fill="#94a3b8" font-size="12.5">Agent / search bar grounded in the brand's own measurement data, used throughout the loop.</text>
+        <line x1="130" y1="315" x2="130" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <line x1="345" y1="315" x2="345" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <line x1="560" y1="315" x2="560" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <line x1="775" y1="315" x2="775" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <line x1="990" y1="315" x2="990" y2="360" stroke="#475569" stroke-width="1.2" stroke-dasharray="4 4"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="kicker">The shift</div>
+    <h2>Buying decisions are moving inside the model.</h2>
+    <p class="big-sub">A growing share of "what should I buy" now starts with an AI assistant, not a search box. There is a Search Console for Google. There is <span class="accent">no console for the answer engines</span>.</p>
+    <div class="row">
+      <span class="pill">ChatGPT</span>
+      <span class="pill">Claude</span>
+      <span class="pill">Perplexity</span>
+      <span class="pill">Gemini</span>
+      <span class="pill">Google AI Overviews</span>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <div class="kicker">The problem</div>
+    <h2>Brands are flying blind in the place buyers now ask.</h2>
+    <div class="cards">
+      <div class="card"><h3>Do I show up</h3><p>No reliable read on whether the AI recommends you for real buyer questions.</p></div>
+      <div class="card"><h3>Who shows up instead</h3><p>No view of which competitors win the answer, on which question, on which engine.</p></div>
+      <div class="card gold"><h3>And why</h3><p>The hardest one. Nobody tells you the actual reason the AI picks them and skips you.</p></div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <span class="badge live">Running today, v0</span>
+    <h2>We already have a working measurement engine.</h2>
+    <p class="big-sub">A real pipeline: generate buyer queries, probe the models, parse every answer, normalize the brands, and report. Run on real categories, with real numbers.</p>
+    <div class="stats">
+      <div class="stat"><div class="v tealv">90%</div><div class="l">Allbirds in sustainable footwear, avg position 1.74</div></div>
+      <div class="stat"><div class="v tealv">~95%</div><div class="l">Hoka for "shoes for ankle pain"</div></div>
+      <div class="stat"><div class="v tealv">62.5%</div><div class="l">On in "Swiss brands" once entities were resolved</div></div>
+    </div>
+    <p class="note">The On result only appeared after we fixed an <span class="accent">entity-resolution</span> bug: the model splits one brand across many names. That is also how the AI itself gets confused. Measuring it correctly is already hard, and we do it.</p>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <div class="kicker gold">Why this vs that</div>
+    <h2>The market is a variable. Execution is the constant.</h2>
+    <p class="big-sub">We are not betting the company on one fixed market staying still. Engines, surfaces, and buyers will shift. What compounds is <span class="accent">depth of execution in one category</span>: a denser, truer dataset than a horizontal tool can clone with a feature.</p>
+    <p class="note">So we go deep in one consumer category first, and let the measurement quality become the moat.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <div class="kicker">The foundation: the measurement layer</div>
+    <h2>Not a vibe check. A benchmark.</h2>
+    <div class="cards">
+      <div class="card"><h3>Individualised input</h3><p>Buyer prompts seeded from the brand's own voice of customer: reviews, tickets, search logs. Not 20 generic guesses.</p></div>
+      <div class="card"><h3>Frozen panels</h3><p>Prompt sets locked into versions, so trends are real and a result can be reproduced and compared over time.</p></div>
+      <div class="card"><h3>Real engines, retrieval on</h3><p>Probe the surfaces the way buyers actually hit them, and capture the sources the answer cited.</p></div>
+    </div>
+    <p class="note">Generic everywhere is a commodity. Deep and grounded in one vertical is defensible.</p>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <span class="badge">The differentiator</span>
+    <h2>The "why" is off-site citation provenance.</h2>
+    <p class="big-sub">A leaderboard says "you are at 0%." That is not actionable. We capture the exact sources the engine cited, and show the gap:</p>
+    <div class="card gold" style="max-width:760px; margin-top:26px">
+      <p style="font-size:18px; color:var(--gold2); line-height:1.5">"Perplexity recommends the competitor for this query. It cited RunRepeat, Reddit, and Wirecutter. You appear in none of them. Here is the list of sources to go earn."</p>
+    </div>
+    <p class="note">That turns a number into a diagnosis, and hands the team the precise places the AI actually trusts. It is valuable on day one, with no dependency on shipping a change fast.</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="kicker gold">The moat</div>
+    <h2>Measurement and action are commoditizing. Proof is open.</h2>
+    <p class="big-sub">Anyone can show a dashboard. Anyone can generate content. Almost nobody can <span class="accent">prove a change caused a measurable lift</span> in AI recommendations.</p>
+    <div class="flow">
+      <div class="step gold"><div class="n">CAUSAL LOOP</div><div class="t">Baseline</div><p>Measure on a frozen panel.</p></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step"><div class="n">STEP 2</div><div class="t">Change</div><p>Make one targeted, off-site move.</p></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step"><div class="n">STEP 3</div><div class="t">Re-measure</div><p>Same panel, same engines.</p></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step gold"><div class="n">RESULT</div><div class="t">Attribute lift</div><p>Prove what moved the answer.</p></div>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="kicker">The landscape</div>
+    <h2>Where we sit.</h2>
+    <div class="two">
+      <div class="col them">
+        <h3>What exists</h3>
+        <ul>
+          <li>Profound measures visibility across engines</li>
+          <li>AirOps produces and ships content at scale</li>
+          <li>Both largely assume the AI learns from your own site</li>
+        </ul>
+      </div>
+      <div class="col us">
+        <h3>What we own</h3>
+        <ul>
+          <li>The off-site "why": which sources the AI actually trusts</li>
+          <li>Causal proof that a change moved the recommendation</li>
+          <li>Depth in one consumer category, not thin coverage everywhere</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="kicker">Trajectory</div>
+    <h2>From engine to console.</h2>
+    <div class="flow">
+      <div class="step"><div class="n">NOW</div><div class="t">v0 engine</div><p>Probe, parse, normalize, report on real categories.</p></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step gold"><div class="n">IN PROGRESS</div><div class="t">Provenance</div><p>Perplexity probe, citations captured, the off-site why.</p></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step"><div class="n">NEXT</div><div class="t">Frozen panels</div><p>Versioned, first-party-seeded query sets.</p></div>
+      <div class="arrow">&rarr;</div>
+      <div class="step gold"><div class="n">THEN</div><div class="t">Causal loop</div><p>Prove lift. Closed beta, August 2026.</p></div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="kicker gold">Close</div>
+    <h1>We measure where you<br>lose, and prove what<br>moves it.</h1>
+    <p class="lead">The console for the LLM era. Deep in one category, built on the one thing competitors cannot clone with a feature: proof.</p>
+  </section>
+
+</div>
+
+<div class="counter" id="counter"></div>
+<div class="dots" id="dots"></div>
+<div class="hint">Arrow keys or click to move</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const progress = document.getElementById('progress');
+  const counter = document.getElementById('counter');
+  let i = 0;
+
+  slides.forEach((_, idx) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (idx === 0 ? ' active' : '');
+    d.onclick = () => go(idx);
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(document.querySelectorAll('.dot'));
+
+  function go(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+    dots.forEach((d, idx) => d.classList.toggle('active', idx === i));
+    progress.style.width = ((i) / (slides.length - 1) * 100) + '%';
+    counter.textContent = (i + 1) + ' / ' + slides.length;
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'){ e.preventDefault(); go(i + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); go(i - 1); }
+    if (e.key === 'Home') go(0);
+    if (e.key === 'End') go(slides.length - 1);
+  });
+  document.getElementById('deck').addEventListener('click', (e) => {
+    const x = e.clientX / window.innerWidth;
+    go(x < 0.32 ? i - 1 : i + 1);
+  });
+
+  go(0);
+</script>
+</body>
+</html>
