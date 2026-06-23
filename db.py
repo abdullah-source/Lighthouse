@@ -41,7 +41,9 @@ CREATE TABLE IF NOT EXISTS brands (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     status          TEXT,
     canonical_name  TEXT,
-    error_message   TEXT
+    error_message   TEXT,
+    mention_rate    REAL,        -- denormalized headline metric for the fast list view
+    total_responses INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS queries (
@@ -183,6 +185,9 @@ def init_db() -> None:
     """Create the full schema if it doesn't exist. Idempotent."""
     with get_conn() as conn:
         conn.execute(SCHEMA)
+        # Add denormalized headline columns to a pre-existing brands table.
+        conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS mention_rate REAL")
+        conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS total_responses INTEGER")
 
 
 # --- Insert helpers (RETURNING id) ------------------------------------------

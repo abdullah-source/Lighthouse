@@ -71,27 +71,42 @@ def get_brand(brand_id: int) -> dict | None:
 
 
 def list_brands() -> list[dict]:
-    """All audited brands, newest first, with a headline mention rate."""
+    """
+    All audited brands, newest first, with the denormalized headline metric.
+    One cheap query — we read mention_rate/total_responses straight off the
+    brand row (set by refresh_brand_metrics at audit time) instead of running
+    the full aggregate per brand (which is an N+1 explosion over a remote DB).
+    """
     with v0.get_conn() as conn:
         rows = conn.execute(
-            "SELECT id, name, category, created_at, COALESCE(status,'done') AS status "
-            "FROM brands ORDER BY id DESC"
+            "SELECT id, name, category, created_at, COALESCE(status,'done') AS status, "
+            "mention_rate, total_responses FROM brands ORDER BY id DESC"
         ).fetchall()
-    out = []
-    for r in rows:
-        agg = aggregate_brand(r["id"]) if r["status"] == "done" else None
-        out.append(
-            {
-                "id": r["id"],
-                "name": r["name"],
-                "category": r["category"],
-                "created_at": r["created_at"],
-                "status": r["status"],
-                "mention_rate": agg["mention_rate"] if agg else None,
-                "responses": agg["total_responses"] if agg else 0,
-            }
+    return [
+        {
+            "id": r["id"],
+            "name": r["name"],
+            "category": r["category"],
+            "created_at": r["created_at"],
+            "status": r["status"],
+            "mention_rate": r["mention_rate"],
+            "responses": r["total_responses"] or 0,
+        }
+        for r in rows
+    ]
+
+
+def refresh_brand_metrics(brand_id: int) -> None:
+    """Recompute and store the headline metric on the brand row (called when an
+    audit finishes, and by the backfill). Keeps list_brands O(1) per row."""
+    agg = aggregate_brand(brand_id)
+    if not agg:
+        return
+    with v0.get_conn() as conn:
+        conn.execute(
+            "UPDATE brands SET mention_rate = %s, total_responses = %s WHERE id = %s",
+            (agg.get("mention_rate"), agg.get("total_responses"), brand_id),
         )
-    return out
 
 
 # --- Alias persistence ------------------------------------------------------
@@ -103,18 +118,26 @@ def load_aliases() -> dict[str, str]:
 
 
 def save_aliases(mapping: dict[str, str]) -> None:
-    """Persist raw->canonical mappings where they actually changed something."""
+    """
+    Persist raw->canonical mappings where they actually changed something.
+    Batched into one executemany round-trip (this runs in the read path, so
+    a per-row loop over a remote DB was the dashboard's slow point).
+    """
+    # Only learn meaningful aliases: a raw form that normalizes to a DIFFERENT
+    # key than the canonical (e.g. "On Cloudmonster" -> "On"). Skip pure
+    # casing/whitespace variants ("On" vs "ON").
+    rows = [
+        (canon, raw) for raw, canon in mapping.items()
+        if raw and canon and _norm_key(raw) != _norm_key(canon)
+    ]
+    if not rows:
+        return
     with v0.get_conn() as conn:
-        for raw, canon in mapping.items():
-            # Only learn a meaningful alias: a raw form that normalizes to a
-            # DIFFERENT key than the canonical (e.g. "On Cloudmonster" -> "On").
-            # Skip pure casing/whitespace variants ("On" vs "ON").
-            if raw and canon and _norm_key(raw) != _norm_key(canon):
-                conn.execute(
-                    "INSERT INTO brand_aliases (canonical, alias) VALUES (%s, %s) "
-                    "ON CONFLICT (alias) DO NOTHING",
-                    (canon, raw),
-                )
+        conn.cursor().executemany(
+            "INSERT INTO brand_aliases (canonical, alias) VALUES (%s, %s) "
+            "ON CONFLICT (alias) DO NOTHING",
+            rows,
+        )
 
 
 # --- Context + frozen panels (v2 depth-based search) ------------------------

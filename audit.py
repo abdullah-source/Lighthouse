@@ -104,8 +104,13 @@ def run_audit(brand_id: int, brand: str, category: str, context: str | None = No
             )
             return
 
-        # Aggregation + normalization happen at read time in store.
+        # Aggregation + normalization happen at read time in store; we also
+        # snapshot the headline metric onto the brand row for the fast list view.
         store.set_status(brand_id, "done")
+        try:
+            store.refresh_brand_metrics(brand_id)
+        except Exception as exc:
+            print(f"[audit] metric refresh skipped: {exc}")
     except Exception as exc:
         store.set_status(brand_id, "error", error=str(exc)[:300])
         print(f"[audit] brand {brand_id} failed:\n{traceback.format_exc()}")
