@@ -16,6 +16,13 @@ httpx>=0.27
 # Lets us keep API keys out of code and out of git.
 python-dotenv>=1.0
 
+# Postgres (Supabase) + pgvector — the v2 database and vector store.
+# psycopg is the driver, psycopg_pool a shared connection pool, pgvector the
+# vector type adapter. DATABASE_URL (in .env) points at Supabase.
+psycopg[binary]>=3.1
+psycopg_pool>=3.2
+pgvector>=0.2
+
 # FastAPI — the v1 backend. Async-native, reuses the probe/parse pipeline.
 fastapi>=0.110
 

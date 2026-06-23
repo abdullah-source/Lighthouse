@@ -72,21 +72,30 @@ def run_audit(brand_id: int, brand: str, category: str, context: str | None = No
             for response_id, brands, positions, descriptors in parse_results:
                 v0.insert_parsed(conn, response_id, brands, positions, descriptors)
 
+        # Index the collected AI answers into the RAG store so the Ask feature
+        # works on any audited brand, even without first-party context.
+        # Best-effort: a failure here must not fail the audit.
+        try:
+            import rag
+            rag.index_responses(brand_id)
+        except Exception as exc:
+            print(f"[audit] response indexing skipped: {exc}")
+
         # 4. Sanity check: if we have responses but almost nothing parsed, that
         # was a transient API failure, not a real 0%. Fail honestly instead of
         # reporting a misleading "done" with 0% (the colorful-shoes bug).
         with v0.get_conn() as conn:
             total_text = conn.execute(
-                "SELECT COUNT(*) FROM responses r JOIN queries q ON q.id=r.query_id "
-                "WHERE q.brand_id=? AND length(r.raw_text)>0",
+                "SELECT COUNT(*) AS n FROM responses r JOIN queries q ON q.id=r.query_id "
+                "WHERE q.brand_id=%s AND length(r.raw_text)>0",
                 (brand_id,),
-            ).fetchone()[0]
+            ).fetchone()["n"]
             parsed_ok = conn.execute(
-                "SELECT COUNT(*) FROM parsed_responses p JOIN responses r ON r.id=p.response_id "
+                "SELECT COUNT(*) AS n FROM parsed_responses p JOIN responses r ON r.id=p.response_id "
                 "JOIN queries q ON q.id=r.query_id "
-                "WHERE q.brand_id=? AND p.brands_mentioned != '[]'",
+                "WHERE q.brand_id=%s AND p.brands_mentioned <> '[]'",
                 (brand_id,),
-            ).fetchone()[0]
+            ).fetchone()["n"]
         if total_text > 0 and parsed_ok < max(1, total_text // 4):
             store.set_status(
                 brand_id, "error",

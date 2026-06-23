@@ -33,7 +33,7 @@
 Why one service: at 10-brand beta scale SQLite is plenty, and one deploy target is far less ops for a solo founder. This matches the PRD cost ceiling.
 
 ### At scale (v2) — split when you need it
-Split only when you outgrow the single box (multi-instance, heavy traffic, team):
+
 - **Frontend → Vercel** (Next.js). Talks to the backend over HTTPS; set `CORS` on FastAPI.
 - **Backend → Railway / Fly** (FastAPI), multiple instances.
 - **Database → Supabase or Neon** (managed Postgres). Migrate the SQLite schema; the SQL is plain so it ports cleanly.

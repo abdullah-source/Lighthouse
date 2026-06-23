@@ -4,11 +4,10 @@ rag.py - the RAG (retrieval-augmented generation) layer.
 Real RAG, not prompt-stuffing:
   ingest → chunk → embed → vector store → semantic retrieval → grounded answer.
 
-Storage today is SQLite (embeddings as JSON arrays, cosine computed in Python).
-That is genuinely RAG and is fine for MVP corpus sizes (hundreds to a few
-thousand chunks). It is deliberately behind a thin interface (store.save_chunks
-/ store.fetch_chunks) so the backend swaps to Postgres + pgvector on deploy with
-no change to callers.
+Storage is Postgres + pgvector (Supabase): embeddings live in a vector(1536)
+column and retrieval is a SQL cosine search (`embedding <=> query`). It sits
+behind a thin interface (store.save_chunks / store.search_chunks) so callers
+don't touch SQL.
 
 Two uses:
   1. index_context()  - chunk + embed a brand's first-party context.
@@ -20,8 +19,6 @@ Disabled gracefully when OPENAI_API_KEY is absent (no embeddings available).
 """
 
 from __future__ import annotations
-
-import math
 
 from anthropic import Anthropic
 from openai import OpenAI
@@ -70,38 +67,52 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     return [d.embedding for d in resp.data]
 
 
-def _cosine(a: list[float], b: list[float]) -> float:
-    dot = sum(x * y for x, y in zip(a, b))
-    na = math.sqrt(sum(x * x for x in a))
-    nb = math.sqrt(sum(y * y for y in b))
-    return dot / (na * nb) if na and nb else 0.0
-
-
 # --- index + retrieve -------------------------------------------------------
 
 def index_context(brand_id: int, document_id: int, text: str) -> int:
-    """Chunk + embed + persist. Returns number of chunks indexed."""
+    """Chunk + embed + persist first-party context. Returns chunks indexed."""
     if not RAG_ENABLED:
         return 0
     chunks = chunk_text(text)
     if not chunks:
         return 0
     embeddings = embed_texts(chunks)
-    store.save_chunks(brand_id, document_id, list(zip(chunks, embeddings)))
+    store.save_chunks(brand_id, document_id, list(zip(chunks, embeddings)), kind="context")
     return len(chunks)
 
 
-def retrieve(brand_id: int, query: str, k: int = 6) -> list[str]:
-    """Top-k chunk texts most similar to the query (cosine), for this brand."""
+def index_responses(brand_id: int) -> int:
+    """
+    Index the AI answers collected for a brand so Ask can search what the
+    engines actually said (works even with no first-party context). Idempotent:
+    clears prior 'response' chunks first. Best-effort; returns chunks indexed.
+    """
+    if not RAG_ENABLED:
+        return 0
+    texts = store.fetch_response_texts(brand_id)
+    if not texts:
+        return 0
+    chunks: list[str] = []
+    for t in texts:
+        chunks.extend(chunk_text(t))
+    if not chunks:
+        return 0
+    embeddings = embed_texts(chunks)
+    store.delete_chunks(brand_id, kind="response")
+    store.save_chunks(brand_id, None, list(zip(chunks, embeddings)), kind="response")
+    return len(chunks)
+
+
+def retrieve(brand_id: int, query: str, k: int = 6, kinds: list[str] | None = None) -> list[str]:
+    """
+    Top-k chunk texts most similar to the query, via pgvector cosine search.
+    `kinds` filters the store: None = everything (Ask), ['context'] = first-party
+    only (panel grounding).
+    """
     if not RAG_ENABLED:
         return []
-    rows = store.fetch_chunks(brand_id)
-    if not rows:
-        return []
     qvec = embed_texts([query])[0]
-    scored = [(_cosine(qvec, emb), text) for text, emb in rows]
-    scored.sort(key=lambda s: s[0], reverse=True)
-    return [text for _score, text in scored[:k]]
+    return store.search_chunks(brand_id, qvec, k=k, kinds=kinds)
 
 
 # --- grounded answer (the "Ask" feature) ------------------------------------
@@ -118,11 +129,11 @@ def answer(brand_id: int, question: str, k: int = 6) -> dict:
     RAG answer over the brand's indexed context. Returns
     {"answer": str, "sources": [chunk snippets]}.
     """
-    chunks = retrieve(brand_id, question, k=k)
+    chunks = retrieve(brand_id, question, k=k)   # all kinds: context + AI responses
     if not chunks:
         return {
-            "answer": "No indexed context yet. Run an audit with your own context "
-                      "pasted in, then ask again.",
+            "answer": "Nothing to search yet. Run an audit for this brand first "
+                      "(and optionally paste your own context), then ask again.",
             "sources": [],
         }
     context_block = "\n\n---\n\n".join(chunks)

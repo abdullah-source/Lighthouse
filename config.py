@@ -33,6 +33,13 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 PERPLEXITY_API_KEY = os.environ.get("PERPLEXITY_API_KEY", "")
 PERPLEXITY_ENABLED = bool(PERPLEXITY_API_KEY)
 
+# --- Database --------------------------------------------------------------
+# When DATABASE_URL (a Postgres connection string, e.g. Supabase) is present,
+# the app uses Postgres + pgvector; otherwise it falls back to local SQLite.
+# The secret lives ONLY in .env — never hardcode it here.
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+USE_POSTGRES = bool(DATABASE_URL)
+
 # --- Clerk auth (optional) --------------------------------------------------
 # Logins activate only when a publishable key is present. Without it, the app
 # runs in open demo mode. Get keys at https://dashboard.clerk.com (free tier).

@@ -1,105 +1,145 @@
-# Brand Visibility Probe — v0
+# Brand Visibility for the LLM Era — v2
 
-Phase 0 of the [Brand Visibility for the LLM Era](docs/02_mvp_prd.md) project.
+Measure whether AI assistants (ChatGPT/GPT-5, Claude, Perplexity) recommend a
+brand for real buyer questions, **who** they recommend instead, **why** (the
+sources they cite), and **how** they describe each brand ("verbal vibes"). A
+local FastAPI web app with a measurement engine, a RAG-grounded depth layer, and
+a dashboard. Think "Search Console for the answer engines."
 
-A single Python script that takes a brand name + category, generates realistic buyer queries, probes them against GPT-5 and Claude Sonnet, parses what each model recommended, and prints a terminal report showing how often the target brand appeared vs. competitors.
+> Status: **v2 MVP, branch `v2-mvp`, runs locally.** Cloud deploy
+> (Postgres + pgvector on Supabase/Railway) is the next step — see
+> [docs/15_v2_architecture_lookahead.md](docs/15_v2_architecture_lookahead.md)
+> and [docs/16_v2_mvp_scope_and_demo.md](docs/16_v2_mvp_scope_and_demo.md).
 
-This is the v0 — no web app, no auth, no scheduling. See [docs/03_stack_and_architecture.md](docs/03_stack_and_architecture.md) for the v1 plan.
+## What it does
 
-## How it works
+One audit of one brand produces a full AI-visibility report:
 
-CLI args (`--brand`, `--category`) → SQLite DB → 4 stages glued by IDs:
-
-1. **Query generation** — 1 Claude Sonnet call → 20 buyer queries.
-2. **Probing** — each query async fan-out to GPT-5 + Claude Sonnet (40 calls).
-3. **Parsing** — each response → Claude Haiku with JSON tool-use → structured brand list.
-4. **Report** — terminal output: mention rate, avg position, share of voice, top 5 competitors.
+- **Mention rate** — % of buyer queries where the brand appears in AI answers.
+- **By-engine breakdown** — visibility across GPT-5, Claude, Perplexity.
+- **Competitors** — who the AI recommends instead, ranked, with positions.
+- **Share of voice + average position.**
+- **Verbal vibes (lexical environment)** — the words AI uses to describe the
+  brand, plus **vibes you own vs vibes competitors own**.
+- **Off-site provenance** — the actual sources the AI cited (the "why," and the
+  target list for action).
+- **Depth-based search** — paste the brand's own context (reviews, positioning,
+  support tickets) and we build a **grounded, frozen, versioned query panel** in
+  that brand's real buyer language instead of generic questions.
+- **Ask (RAG)** — ask questions answered over the brand's own indexed context.
+- **Brand entity normalization** — "Brooks" and "Brooks Running" counted as one.
 
 ## Setup
 
-### 1. Check Python (need 3.11+)
-```bash
-python3 --version
-```
-
-### 2. Virtual environment + install
 ```bash
 cd "/Users/abdullahali/project - summer"
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env          # then edit .env, paste keys (never commit it)
 ```
 
-### 3. API keys
-Get keys from [OpenAI](https://platform.openai.com/api-keys) and [Anthropic](https://console.anthropic.com/settings/keys), then:
+API keys (`.env`):
+- `ANTHROPIC_API_KEY` — **required** (query gen, parsing, action, Ask).
+- `OPENAI_API_KEY` — GPT-5 probe **and** embeddings for RAG.
+- `PERPLEXITY_API_KEY` — retrieval engine that returns **citations** (the "why").
+- `CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` — optional; logins activate only
+  if present, otherwise the app runs in open demo mode.
+
+Each key is optional except Anthropic; missing keys degrade gracefully (the
+relevant engine/feature is skipped, the app still runs).
+
+## Run (web app)
+
 ```bash
-cp .env.example .env
-# edit .env, paste your keys
+.venv/bin/uvicorn api:app --port 8000
 ```
 
-## Run
+- `http://localhost:8000`     — marketing landing
+- `http://localhost:8000/app` — the product dashboard (run an audit, view results)
+
+Run an audit from the form (brand + category, plus optional context for a
+grounded panel). It runs in the background (~60–120s) and the dashboard polls
+until done. Tabs: **Overview**, **Vibes**, **Action**, **Ask**.
+
+### Seed familiar brands for an instant demo
+
+```bash
+.venv/bin/python seed_demo.py        # Nike, Adidas, Puma, Reebok, Oofos (cached)
+```
+
+Runs real audits once; they persist so the demo opens instantly with authentic
+data. Enterprise examples (consulting, legal) are in `seed_demo.py` as
+`ENTERPRISE_BRANDS`, run explicitly when you want to show the product ports
+beyond footwear.
+
+### v0 CLI (still works)
 
 ```bash
 python main.py --brand "Allbirds" --category "sustainable footwear"
 ```
 
-Takes ~60–90 seconds (most of it waiting on API calls). You'll see something like:
+## How it works (pipeline)
 
 ```
-======================================================================
-  BRAND VISIBILITY REPORT — Allbirds  (sustainable footwear)
-======================================================================
-
-  Responses analyzed:   40
-  Mention rate:         32.5%  (13 / 40)
-  Avg. position:          2.8  (when mentioned, lower is better)
-  Share of voice:       11.4%  (13 / 114 brand mentions)
-
-  By model:
-    gpt-5                            7/20  (35.0%)
-    claude-sonnet-4-6                6/20  (30.0%)
-
-  Top 5 competitors:
-    1. Veja                          18 mentions (45.0%)  avg pos 2.1
-    2. Adidas                        12 mentions (30.0%)  avg pos 3.4
-    ...
+form (brand, category, optional context)
+  → panel.build_panel   grounded (RAG-retrieved context) or generic → FROZEN, versioned panel
+  → probe.probe_all     each query × {GPT-5, Claude, Perplexity}, async, retried
+                        (Perplexity returns cited sources)
+  → parse.parse_all     Haiku tool-use → {brands, positions, descriptors/vibes}
+  → store.aggregate_brand   canonicalize names; compute metrics + provenance + lexical
+  → dashboard
 ```
+
+RAG ([rag.py](rag.py)): context is chunked, embedded (OpenAI
+`text-embedding-3-small`), stored as vectors, and retrieved by cosine — used to
+ground panel generation and to power the **Ask** tab. The vector store sits
+behind a thin interface (`store.save_chunks`/`fetch_chunks`) so it swaps to
+pgvector on deploy.
 
 ## File map
 
 | File | Role |
 |---|---|
-| `main.py` | CLI entrypoint, orchestrates the pipeline |
-| `config.py` | Loads env vars + centralizes model IDs and tuning knobs |
-| `db.py` | SQLite schema + insert / fetch helpers |
-| `queries.py` | Generates 20 buyer queries via Claude Sonnet |
-| `probe.py` | Async fan-out — each query against both models |
-| `parse.py` | Async fan-out — extracts brands from each response (Haiku + tool-use) |
-| `report.py` | Aggregates parsed rows + prints terminal report |
-| `requirements.txt` | Pinned Python dependencies |
-| `.env.example` | Template for API keys |
-| `data/probe.sqlite` | Auto-created on first run (gitignored) |
+| `api.py` | FastAPI backend + serves the web app + JSON API |
+| `audit.py` | Orchestrates one audit (panel → probe → parse → done), background task |
+| `panel.py` | Builds + freezes a versioned query panel (grounded or generic) |
+| `queries.py` | Generic + **grounded** buyer-query generation (Claude Sonnet) |
+| `probe.py` | Async fan-out — each query × GPT-5 / Claude / Perplexity (+ citations) |
+| `parse.py` | Extracts brands, positions, and **vibes** per response (Haiku tool-use) |
+| `rag.py` | Chunk → embed → cosine retrieval → grounded **Ask** answers |
+| `brand_identity.py` | Canonicalizes brand-name variants (the Brooks/On fix) |
+| `store.py` | v1 DB layer: migrations, panels, aggregate (metrics + provenance + lexical) |
+| `db.py` | SQLite schema + insert/fetch helpers |
+| `action.py` | Generates a publish-ready action artifact (the wedge) |
+| `config.py` | Env vars, model IDs, tuning knobs |
+| `seed_demo.py` | Pre-run real audits for familiar brands (instant demo) |
+| `web/` | Frontend SPA: landing, dashboard (Overview/Vibes/Action/Ask), auth |
+| `main.py`, `report.py` | v0 CLI entrypoint + terminal report (still functional) |
+| `data/probe.sqlite` | Auto-created, gitignored |
 
-## Cost expectations
+## Cost
 
-For one brand × 20 queries × 2 models × 1 trial each:
+Per audit (cached after; re-run only for a fresh trend point):
 
-| Stage | Cost |
-|---|---|
-| Query generation | ~$0.01 |
-| Probing (GPT-5, 20 calls) | ~$0.05 |
-| Probing (Sonnet, 20 calls) | ~$0.05 |
-| Parsing (Haiku, 40 calls) | ~$0.02 |
-| **Total per run** | **~$0.13** |
+| Audit | Calls | Est. cost |
+|---|---|---|
+| Generic (20 queries × 3 engines) | ~121 | **~$0.70–1.00** |
+| Grounded (40 queries × 3 engines + embeds) | ~245 | **~$1.50–2.50** |
 
-Phase 0 demo (5 brands) ≈ **$0.65** total. Well under the $10 ceiling in [docs/03_stack_and_architecture.md](docs/03_stack_and_architecture.md).
+GPT-5 probing dominates; Haiku parsing and Perplexity Sonar are cheap; a frozen
+panel makes query generation a one-time cost. At ~$1–2/audit you can re-measure a
+brand daily and stay well under the $500/brand/month ceiling.
 
-## What's NOT in v0 (deferred)
+## What's next (roadmap)
 
-- Gemini, Perplexity probing — add when API keys are in hand
-- 3 trials per query (currently 1) — bump in v1 for probability distributions
-- Daily refresh / scheduling
-- Action artifact generation (the wedge — see [docs/04_day2_log_addition.md](docs/04_day2_log_addition.md))
-- Web dashboard, multi-tenant DB, auth, billing
+Cloud foundation (Postgres + pgvector, Railway deploy) → parser v2
+(attributes/sentiment) + provenance source-classification + absent-source
+analysis → crawler/agent-readiness diagnostics → collaborative content workflow
+→ causal proof loop (difference-in-differences) → MCP server + multitenancy.
 
-See [docs/03_stack_and_architecture.md](docs/03_stack_and_architecture.md) section 6 for the v1 build order.
+Full plan and strategy of record:
+[docs/13](docs/13_strategy_and_pivot_assessment.md),
+[docs/14](docs/14_session_log_2026-06-12.md),
+[docs/15](docs/15_v2_architecture_lookahead.md),
+[docs/16](docs/16_v2_mvp_scope_and_demo.md).

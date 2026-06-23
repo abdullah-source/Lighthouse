@@ -1,23 +1,21 @@
 """
-store.py - v1 database layer.
+store.py - the v2 database layer (Postgres + pgvector via db.py).
 
-Sits on top of the v0 db.py (same SQLite file) and adds:
-  - an idempotent migration (new columns + tables, existing data preserved)
+Adds on top of db.py's schema:
   - brand/audit lifecycle with a status field
   - a learned brand-alias table (persists the Brooks fix over time)
-  - the aggregation that powers the dashboard, with normalization applied
-  - an experiments scaffold for the causal layer
+  - context ingestion + frozen, versioned query panels (depth-based search)
+  - a pgvector-backed RAG chunk store (context + collected AI responses)
+  - read-time aggregation that powers the dashboard, with normalization,
+    off-site provenance, and the lexical "verbal vibes"
 
 Read-time normalization: we canonicalize brand mentions when we aggregate,
-not when we store. That way improving brand_identity.py re-fixes old data
-without re-probing.
+not when we store, so improving brand_identity.py re-fixes old data.
 """
 
 from __future__ import annotations
 
 import json
-import sqlite3
-from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 import db as v0
@@ -26,97 +24,9 @@ from brand_identity import BrandResolver, _norm_key
 
 # --- Migration --------------------------------------------------------------
 
-def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
-    return {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
-
-
 def migrate() -> None:
-    """Create v0 tables, then add v1 columns/tables. Safe to run repeatedly."""
-    v0.init_db()  # ensures brands/queries/responses/parsed_responses exist
-    with v0.get_conn() as conn:
-        bcols = _columns(conn, "brands")
-        if "status" not in bcols:
-            conn.execute("ALTER TABLE brands ADD COLUMN status TEXT")
-        if "canonical_name" not in bcols:
-            conn.execute("ALTER TABLE brands ADD COLUMN canonical_name TEXT")
-        if "error_message" not in bcols:
-            conn.execute("ALTER TABLE brands ADD COLUMN error_message TEXT")
-
-        rcols = _columns(conn, "responses")
-        if "phase" not in rcols:
-            conn.execute("ALTER TABLE responses ADD COLUMN phase TEXT DEFAULT 'baseline'")
-        if "experiment_id" not in rcols:
-            conn.execute("ALTER TABLE responses ADD COLUMN experiment_id INTEGER")
-        if "citations" not in rcols:
-            conn.execute("ALTER TABLE responses ADD COLUMN citations TEXT")
-
-        pcols = _columns(conn, "parsed_responses")
-        if "descriptors" not in pcols:
-            conn.execute("ALTER TABLE parsed_responses ADD COLUMN descriptors TEXT")
-
-        conn.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS brand_aliases (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                canonical   TEXT NOT NULL,
-                alias       TEXT NOT NULL UNIQUE,
-                created_at  TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS experiments (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                brand_id        INTEGER NOT NULL REFERENCES brands(id),
-                target_query    TEXT NOT NULL,
-                candidate_content TEXT,
-                baseline_rate   REAL,
-                treatment_rate  REAL,
-                created_at      TEXT NOT NULL
-            );
-            -- v2 depth-based search: ingested first-party context + the frozen,
-            -- versioned query panels generated (and grounded) from it.
-            CREATE TABLE IF NOT EXISTS context_documents (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                brand_id    INTEGER NOT NULL REFERENCES brands(id),
-                source_type TEXT,
-                title       TEXT,
-                raw_text    TEXT NOT NULL,
-                created_at  TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS query_panels (
-                id           INTEGER PRIMARY KEY AUTOINCREMENT,
-                brand_id     INTEGER NOT NULL REFERENCES brands(id),
-                version      INTEGER NOT NULL,
-                status       TEXT NOT NULL,          -- 'frozen'
-                grounded     INTEGER NOT NULL DEFAULT 0,
-                seed_summary TEXT,
-                created_at   TEXT NOT NULL,
-                frozen_at    TEXT
-            );
-            CREATE TABLE IF NOT EXISTS panel_queries (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                panel_id    INTEGER NOT NULL REFERENCES query_panels(id),
-                query_text  TEXT NOT NULL,
-                intent      TEXT,
-                created_at  TEXT NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS idx_panel_queries_panel ON panel_queries(panel_id);
-            CREATE INDEX IF NOT EXISTS idx_query_panels_brand ON query_panels(brand_id);
-            -- RAG vector store. embedding is a JSON float array here (SQLite);
-            -- this maps 1:1 onto a pgvector `vector(1536)` column when we deploy.
-            CREATE TABLE IF NOT EXISTS context_chunks (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                brand_id    INTEGER NOT NULL REFERENCES brands(id),
-                document_id INTEGER REFERENCES context_documents(id),
-                chunk_text  TEXT NOT NULL,
-                embedding   TEXT NOT NULL,        -- JSON array of floats
-                created_at  TEXT NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS idx_context_chunks_brand ON context_chunks(brand_id);
-            """
-        )
-
-
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    """Create the full schema if needed. (db.py holds the canonical schema.)"""
+    v0.init_db()
 
 
 # --- Brand / audit lifecycle ------------------------------------------------
@@ -125,18 +35,18 @@ def create_brand(name: str, category: str) -> int:
     """Insert a brand row in 'pending' status. Returns brand_id."""
     canon = BrandResolver(known_brands=[name]).canonicalize(name)
     with v0.get_conn() as conn:
-        cur = conn.execute(
-            "INSERT INTO brands (name, category, created_at, status, canonical_name) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (name, category, _now(), "pending", canon),
-        )
-        return cur.lastrowid
+        row = conn.execute(
+            "INSERT INTO brands (name, category, status, canonical_name) "
+            "VALUES (%s, %s, %s, %s) RETURNING id",
+            (name, category, "pending", canon),
+        ).fetchone()
+        return row["id"]
 
 
 def set_status(brand_id: int, status: str, error: str | None = None) -> None:
     with v0.get_conn() as conn:
         conn.execute(
-            "UPDATE brands SET status = ?, error_message = ? WHERE id = ?",
+            "UPDATE brands SET status = %s, error_message = %s WHERE id = %s",
             (status, error, brand_id),
         )
 
@@ -145,17 +55,17 @@ def get_sample_query(brand_id: int) -> str | None:
     """A representative buyer query for the brand, used to seed action artifacts."""
     with v0.get_conn() as conn:
         row = conn.execute(
-            "SELECT query_text FROM queries WHERE brand_id = ? ORDER BY id LIMIT 1",
+            "SELECT query_text FROM queries WHERE brand_id = %s ORDER BY id LIMIT 1",
             (brand_id,),
         ).fetchone()
     return row["query_text"] if row else None
 
 
-def get_brand(brand_id: int) -> sqlite3.Row | None:
+def get_brand(brand_id: int) -> dict | None:
     with v0.get_conn() as conn:
         return conn.execute(
             "SELECT id, name, category, created_at, status, canonical_name, error_message "
-            "FROM brands WHERE id = ?",
+            "FROM brands WHERE id = %s",
             (brand_id,),
         ).fetchone()
 
@@ -169,7 +79,7 @@ def list_brands() -> list[dict]:
         ).fetchall()
     out = []
     for r in rows:
-        agg = aggregate_brand(r["id"]) if r["status"] in ("done", None) else None
+        agg = aggregate_brand(r["id"]) if r["status"] == "done" else None
         out.append(
             {
                 "id": r["id"],
@@ -198,13 +108,12 @@ def save_aliases(mapping: dict[str, str]) -> None:
         for raw, canon in mapping.items():
             # Only learn a meaningful alias: a raw form that normalizes to a
             # DIFFERENT key than the canonical (e.g. "On Cloudmonster" -> "On").
-            # Skip pure casing/whitespace variants ("On" vs "ON"), which would
-            # poison resolution by overriding the seed casing.
+            # Skip pure casing/whitespace variants ("On" vs "ON").
             if raw and canon and _norm_key(raw) != _norm_key(canon):
                 conn.execute(
-                    "INSERT OR IGNORE INTO brand_aliases (canonical, alias, created_at) "
-                    "VALUES (?, ?, ?)",
-                    (canon, raw, _now()),
+                    "INSERT INTO brand_aliases (canonical, alias) VALUES (%s, %s) "
+                    "ON CONFLICT (alias) DO NOTHING",
+                    (canon, raw),
                 )
 
 
@@ -213,12 +122,12 @@ def save_aliases(mapping: dict[str, str]) -> None:
 def save_context(brand_id: int, raw_text: str, source_type: str = "paste",
                  title: str | None = None) -> int:
     with v0.get_conn() as conn:
-        cur = conn.execute(
-            "INSERT INTO context_documents (brand_id, source_type, title, raw_text, created_at) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (brand_id, source_type, title, raw_text, _now()),
-        )
-        return cur.lastrowid
+        row = conn.execute(
+            "INSERT INTO context_documents (brand_id, source_type, title, raw_text) "
+            "VALUES (%s, %s, %s, %s) RETURNING id",
+            (brand_id, source_type, title, raw_text),
+        ).fetchone()
+        return row["id"]
 
 
 def create_panel(brand_id: int, queries: list[dict], grounded: bool,
@@ -227,56 +136,24 @@ def create_panel(brand_id: int, queries: list[dict], grounded: bool,
     Persist a frozen, versioned panel. `queries` is [{intent, query}, ...].
     Version auto-increments per brand. Returns panel_id.
     """
-    now = _now()
     with v0.get_conn() as conn:
         row = conn.execute(
-            "SELECT COALESCE(MAX(version), 0) AS v FROM query_panels WHERE brand_id = ?",
+            "SELECT COALESCE(MAX(version), 0) AS v FROM query_panels WHERE brand_id = %s",
             (brand_id,),
         ).fetchone()
         version = (row["v"] or 0) + 1
-        cur = conn.execute(
-            "INSERT INTO query_panels (brand_id, version, status, grounded, seed_summary, "
-            "created_at, frozen_at) VALUES (?, ?, 'frozen', ?, ?, ?, ?)",
-            (brand_id, version, 1 if grounded else 0, seed_summary, now, now),
-        )
-        panel_id = cur.lastrowid
+        prow = conn.execute(
+            "INSERT INTO query_panels (brand_id, version, status, grounded, seed_summary, frozen_at) "
+            "VALUES (%s, %s, 'frozen', %s, %s, now()) RETURNING id",
+            (brand_id, version, grounded, seed_summary),
+        ).fetchone()
+        panel_id = prow["id"]
         for q in queries:
             conn.execute(
-                "INSERT INTO panel_queries (panel_id, query_text, intent, created_at) "
-                "VALUES (?, ?, ?, ?)",
-                (panel_id, q["query"], q.get("intent") or "general", now),
+                "INSERT INTO panel_queries (panel_id, query_text, intent) VALUES (%s, %s, %s)",
+                (panel_id, q["query"], q.get("intent") or "general"),
             )
     return panel_id
-
-
-def save_chunks(brand_id: int, document_id: int,
-                items: list[tuple[str, list[float]]]) -> int:
-    """Persist (chunk_text, embedding) pairs for the RAG store. Returns count."""
-    now = _now()
-    with v0.get_conn() as conn:
-        for text, emb in items:
-            conn.execute(
-                "INSERT INTO context_chunks (brand_id, document_id, chunk_text, embedding, created_at) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (brand_id, document_id, text, json.dumps(emb), now),
-            )
-    return len(items)
-
-
-def fetch_chunks(brand_id: int) -> list[tuple[str, list[float]]]:
-    """All (chunk_text, embedding) for a brand, for in-process cosine retrieval."""
-    with v0.get_conn() as conn:
-        rows = conn.execute(
-            "SELECT chunk_text, embedding FROM context_chunks WHERE brand_id = ?",
-            (brand_id,),
-        ).fetchall()
-    out: list[tuple[str, list[float]]] = []
-    for r in rows:
-        try:
-            out.append((r["chunk_text"], json.loads(r["embedding"])))
-        except (ValueError, TypeError):
-            continue
-    return out
 
 
 def get_active_panel(brand_id: int) -> dict | None:
@@ -284,13 +161,13 @@ def get_active_panel(brand_id: int) -> dict | None:
     with v0.get_conn() as conn:
         p = conn.execute(
             "SELECT id, version, grounded, seed_summary, frozen_at "
-            "FROM query_panels WHERE brand_id = ? ORDER BY version DESC LIMIT 1",
+            "FROM query_panels WHERE brand_id = %s ORDER BY version DESC LIMIT 1",
             (brand_id,),
         ).fetchone()
         if p is None:
             return None
         n = conn.execute(
-            "SELECT COUNT(*) AS c FROM panel_queries WHERE panel_id = ?", (p["id"],)
+            "SELECT COUNT(*) AS c FROM panel_queries WHERE panel_id = %s", (p["id"],)
         ).fetchone()["c"]
     return {
         "panel_id": p["id"],
@@ -300,6 +177,64 @@ def get_active_panel(brand_id: int) -> dict | None:
         "query_count": n,
         "frozen_at": p["frozen_at"],
     }
+
+
+# --- RAG chunk store (pgvector) ---------------------------------------------
+
+def _vec_literal(emb: list[float]) -> str:
+    """Render an embedding as a pgvector text literal: [0.1,0.2,...]."""
+    return "[" + ",".join(repr(float(x)) for x in emb) + "]"
+
+
+def save_chunks(brand_id: int, document_id: int | None,
+                items: list[tuple[str, list[float]]], kind: str = "context") -> int:
+    """
+    Persist (chunk_text, embedding) pairs. `kind` is 'context' (first-party) or
+    'response' (collected AI answers). Embeddings go into a pgvector column.
+    """
+    with v0.get_conn() as conn:
+        for text, emb in items:
+            conn.execute(
+                "INSERT INTO context_chunks (brand_id, document_id, chunk_text, embedding, kind) "
+                "VALUES (%s, %s, %s, %s::vector, %s)",
+                (brand_id, document_id, text, _vec_literal(emb), kind),
+            )
+    return len(items)
+
+
+def delete_chunks(brand_id: int, kind: str) -> None:
+    """Drop a brand's chunks of one kind (so re-indexing is idempotent)."""
+    with v0.get_conn() as conn:
+        conn.execute("DELETE FROM context_chunks WHERE brand_id = %s AND kind = %s", (brand_id, kind))
+
+
+def search_chunks(brand_id: int, query_vec: list[float], k: int = 6,
+                  kinds: list[str] | None = None) -> list[str]:
+    """
+    pgvector cosine search: top-k chunk texts nearest the query embedding.
+    kinds=None searches everything (Ask); ['context'] = first-party only.
+    """
+    sql = "SELECT chunk_text FROM context_chunks WHERE brand_id = %s AND embedding IS NOT NULL"
+    params: list = [brand_id]
+    if kinds:
+        sql += " AND kind = ANY(%s)"
+        params.append(kinds)
+    sql += " ORDER BY embedding <=> %s::vector LIMIT %s"
+    params += [_vec_literal(query_vec), k]
+    with v0.get_conn() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [r["chunk_text"] for r in rows]
+
+
+def fetch_response_texts(brand_id: int) -> list[str]:
+    """The raw AI answers collected for a brand (for RAG over what engines said)."""
+    with v0.get_conn() as conn:
+        rows = conn.execute(
+            "SELECT r.raw_text FROM responses r JOIN queries q ON q.id = r.query_id "
+            "WHERE q.brand_id = %s AND length(r.raw_text) > 0",
+            (brand_id,),
+        ).fetchall()
+    return [r["raw_text"] for r in rows]
 
 
 # --- Source provenance (the "why": which pages the AI cites) ----------------
@@ -313,11 +248,10 @@ def _domain(url: str) -> str:
     return net[4:] if net.startswith("www.") else net
 
 
-def _build_provenance(rows: list[sqlite3.Row]) -> dict:
+def _build_provenance(rows: list) -> dict:
     """
     Roll up the cited sources across a brand's retrieval answers into a ranked
-    list of domains. This is the off-site "why": the pages the engine trusts
-    when it answers buyer questions in this category.
+    list of domains. This is the off-site "why": the pages the engine trusts.
     """
     domain_count: dict[str, int] = {}
     domain_url: dict[str, str] = {}

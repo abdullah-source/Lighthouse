@@ -153,7 +153,7 @@ function renderVibes() {
 function renderAsk() {
   const d = currentData;
   $("#tabbody").innerHTML = `
-    <p class="muted" style="margin:-4px 0 16px">Ask anything about ${escapeHtml(d.name)} and its category. Answers are grounded in your own ingested context (retrieval-augmented).</p>
+    <p class="muted" style="margin:-4px 0 16px">Ask anything about ${escapeHtml(d.name)}. Answers are grounded (retrieval-augmented) in the AI responses we collected for this brand, plus any first-party context you added.</p>
     <div class="ask-box">
       <input id="ask-q" type="text" placeholder="e.g. what do our buyers care about most? why might AI skip us?" autocomplete="off" />
       <button id="ask-btn" class="btn btn-primary btn-sm">Ask</button>

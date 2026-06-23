@@ -58,10 +58,11 @@ _EXTRACT_TOOL = {
                     "The 'verbal vibe' for each brand: the descriptive words or "
                     "short phrases the response actually used to characterize it "
                     "(qualities, attributes, use-cases, sentiments). Lowercase, "
-                    "1-2 words each, taken from or faithful to the text. Example: "
-                    "{'Hoka': ['cushioned', 'plush', 'recovery'], "
-                    "'Brooks': ['stability', 'support', 'reliable']}. Only include "
-                    "brands actually described; omit ones merely listed."
+                    "1-2 words each, taken only from the text. Shape: map each "
+                    "brand name to a list of its descriptors, e.g. "
+                    "{\"<brand>\": [\"<descriptor>\", \"<descriptor>\"]}. Only "
+                    "include brands actually described; omit ones merely listed. "
+                    "Do not invent descriptors that are not in the response."
                 ),
                 "additionalProperties": {
                     "type": "array",

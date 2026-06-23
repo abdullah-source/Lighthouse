@@ -46,7 +46,8 @@ def build_panel(brand_id: int, brand: str, category: str,
         # most-informative chunks rather than a blind truncation. Falls back to
         # the raw context if RAG is disabled or returns nothing.
         rag.index_context(brand_id, doc_id, context_text)
-        retrieved = rag.retrieve(brand_id, _GROUNDING_QUERY, k=10)
+        # Ground only on first-party context, never on the AI responses.
+        retrieved = rag.retrieve(brand_id, _GROUNDING_QUERY, k=10, kinds=["context"])
         grounding = "\n\n".join(retrieved) if retrieved else context_text
         result = generate_grounded_queries(brand, category, grounding, count=PANEL_SIZE)
         items = result["queries"]                      # [{intent, query}, ...]

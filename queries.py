@@ -1,11 +1,6 @@
 """
 queries.py — generate buyer queries for a brand using Claude Sonnet.
 
-Why this is its own file:
-- It's the one place we call an LLM creatively (not extractively).
-- The prompt design matters: better prompt → better queries → better
-  signal in the rest of the pipeline.
-
 Why synchronous (no asyncio here):
 - We make exactly ONE API call per brand. async would be overkill and
   would make the code harder to read on a first pass.
