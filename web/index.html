@@ -1,144 +1,102 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GEO — Brand Visibility for the LLM Era</title>
-<meta name="description" content="Measure what AI recommends, prove what moves it, and ship the change in one click." />
+<title>Lighthouse — the measurement layer for AI search</title>
 <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <!-- NAV -->
   <nav class="nav">
     <div class="wrap nav-in">
-      <a class="logo" href="/"><span class="mark"></span> Brand Visibility</a>
+      <a class="logo" href="/"><span class="mark"></span> Lighthouse</a>
       <div class="nav-links">
+        <a href="#features">Product</a>
         <a href="#how">How it works</a>
-        <a href="#action">Action</a>
-        <a href="#features">Platform</a>
+        <a href="/app">Dashboard</a>
       </div>
-      <div class="nav-cta" id="nav-cta">
-        <a class="btn btn-ghost btn-sm" id="signin-btn" href="/app">Sign in</a>
-        <a class="btn btn-primary btn-sm" id="demo-btn" href="/app">Get a demo</a>
+      <div class="nav-cta">
+        <a class="btn btn-ghost btn-sm" id="signin-btn" href="#">Sign in</a>
+        <a class="btn btn-primary btn-sm" href="/app">Start free</a>
         <span id="user-slot" class="cl-hidden"></span>
       </div>
     </div>
   </nav>
 
-  <!-- HERO -->
-  <header class="hero">
-    <div class="wrap hero-in">
+  <div class="wrap">
+    <!-- HERO -->
+    <section class="hero">
       <div>
-        <span class="eyebrow">Generative Engine Optimization</span>
-        <h1>Know what AI tells people <span class="grad-text">to buy.</span></h1>
-        <p class="sub">Consumers ask ChatGPT, Claude, and Perplexity what to buy. We measure whether your brand gets recommended, show who wins and why, and turn each gap into a publish-ready change.</p>
+        <div class="badge"><span class="dot"></span> Live: GPT-5 · Claude · Perplexity</div>
+        <h1>The measurement layer for AI search.</h1>
+        <p class="sub">When buyers ask AI assistants what to buy, Lighthouse shows whether your brand is recommended, who wins instead, and the sources driving it.</p>
         <div class="hero-cta">
-          <a class="btn btn-primary" id="hero-demo" href="/app">Ask for a demo today</a>
-          <a class="btn btn-ghost" href="#how">See how it works</a>
+          <a class="btn btn-primary" href="/app">Run a free audit</a>
+          <a class="btn btn-ghost" href="/app">See a live example</a>
         </div>
-        <div class="models-row">
-          <span class="chip on">GPT-5</span>
-          <span class="chip on">Claude</span>
-          <span class="chip on">Perplexity</span>
-          <span class="chip soon">Gemini soon</span>
+        <div class="chips">
+          <span class="lbl">Measuring</span>
+          <span class="chip"><span class="d"></span>GPT-5</span>
+          <span class="chip"><span class="d"></span>Claude</span>
+          <span class="chip"><span class="d"></span>Perplexity</span>
         </div>
-        <p class="hero-trust">Brand-paid only. Every recommendation cites the AI responses behind it.</p>
       </div>
 
-      <!-- product preview mockup -->
-      <div class="preview" aria-hidden="true">
-        <div class="preview-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span style="margin-left:8px;font-size:12px;color:var(--faint)">app · Allbirds · sustainable footwear</span></div>
-        <div class="preview-body">
-          <div class="pv-kpis">
-            <div class="pv-kpi"><div class="k">Mention rate</div><div class="v accent">90%</div></div>
-            <div class="pv-kpi"><div class="k">Avg position</div><div class="v">1.8</div></div>
-            <div class="pv-kpi"><div class="k">Share of voice</div><div class="v">9.6%</div></div>
+      <div class="dashprev">
+        <div class="dp-hd">
+          <div class="ttl">Hoka<span>running shoes · 120 responses</span></div>
+          <div class="dp-tabs"><span class="dp-tab on">Overview</span><span class="dp-tab">Vibes</span><span class="dp-tab">Ask</span></div>
+        </div>
+        <div class="dp-kpis">
+          <div class="dp-kpi"><div class="l">Mention rate</div><div class="v b">85%</div></div>
+          <div class="dp-kpi"><div class="l">Avg position</div><div class="v">1.7</div></div>
+          <div class="dp-kpi"><div class="l">Share of voice</div><div class="v">31%</div></div>
+          <div class="dp-kpi"><div class="l">Engines</div><div class="v">3</div></div>
+        </div>
+        <div class="dp-body">
+          <div class="dp-col">
+            <h4>You vs competitors</h4>
+            <div class="barrow"><span class="nm focal-row">Hoka</span><div class="bar focal"><span style="width:85%"></span></div><span class="meta">85%</span></div>
+            <div class="barrow"><span class="nm">Brooks</span><div class="bar"><span style="width:72%"></span></div><span class="meta">72%</span></div>
+            <div class="barrow"><span class="nm">New Balance</span><div class="bar"><span style="width:60%"></span></div><span class="meta">60%</span></div>
+            <div class="barrow"><span class="nm">ASICS</span><div class="bar"><span style="width:48%"></span></div><span class="meta">48%</span></div>
           </div>
-          <div class="pv-row"><span class="pv-label">Allbirds (you)</span><div class="pv-bar you"><span style="width:90%"></span></div><span class="pv-val">90%</span></div>
-          <div class="pv-row"><span class="pv-label">Veja</span><div class="pv-bar"><span style="width:78%"></span></div><span class="pv-val">78%</span></div>
-          <div class="pv-row"><span class="pv-label">Rothy's</span><div class="pv-bar"><span style="width:60%"></span></div><span class="pv-val">60%</span></div>
-          <div class="pv-row"><span class="pv-label">Cariuma</span><div class="pv-bar"><span style="width:38%"></span></div><span class="pv-val">38%</span></div>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- FEATURES -->
-  <section class="band" id="features">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="tag">The platform</span>
-        <h2>Measurement is the table stakes. Proof and action are the edge.</h2>
-        <p>Every tool shows you a visibility score. We prove which change caused the lift, and let you ship it.</p>
-      </div>
-      <div class="feature-grid">
-        <div class="feature"><div class="ic">&#128202;</div><h3>Measure across models</h3><p>Probe GPT-5, Claude, and Perplexity (with the sources they cite) on real buyer queries. See mention rate, position, sentiment, and share of voice, per model.</p></div>
-        <div class="feature"><div class="ic">&#129513;</div><h3>Real competitor truth</h3><p>Brand-identity normalization collapses "Brooks", "Brooks Running", and "Brooks Adrenaline GTS 23" into one brand, so the numbers are real, not noise.</p></div>
-        <div class="feature"><div class="ic">&#9889;</div><h3>Causal proof, then action</h3><p>Prove which change moves your mention rate, generate the publish-ready fix, and ship it in one seamless click.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- HOW IT WORKS -->
-  <section class="band" id="how">
-    <div class="wrap">
-      <div class="sec-head"><span class="tag">How it works</span><h2>From blind to recommended, in four steps.</h2></div>
-      <div class="steps">
-        <div class="step"><div class="n">1</div><h4>Add your brand</h4><p>Enter your brand and category. We generate the buyer queries that matter.</p></div>
-        <div class="step"><div class="n">2</div><h4>Measure</h4><p>We probe the models and report where you stand against the brands that win.</p></div>
-        <div class="step"><div class="n">3</div><h4>Prove</h4><p>Run a before/after experiment to prove which change actually moves the needle.</p></div>
-        <div class="step"><div class="n">4</div><h4>Ship</h4><p>Generate the publish-ready content and push the change in one click.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ACTION WEDGE -->
-  <section class="band" id="action">
-    <div class="wrap">
-      <div class="sec-head"><span class="tag">The action wedge</span><h2>The value is what you do after you see the data.</h2></div>
-      <div class="wedge">
-        <div>
-          <p class="muted" style="font-size:17px">Other tools stop at a dashboard. We turn a finding into a publish-ready change:</p>
-          <ul>
-            <li><b>Fast.</b> A finding becomes a publish-ready change in minutes, not a project.</li>
-            <li><b>Grounded.</b> Built from the AI's actual answers about you and the sources they cite, not guesswork.</li>
-            <li><b>Yours.</b> Each change reflects your brand's own context. One-click push to Shopify/Webflow is on the roadmap; today you copy and publish.</li>
-          </ul>
-          <a class="btn btn-primary" href="/app" style="margin-top:20px">Try the action wedge</a>
-        </div>
-        <div class="artifact-card">
-          <div class="ac-top"><span style="font-weight:650">Publish-ready FAQ</span><span class="preview-tag">generated</span></div>
-          <div class="ac-body">
-            <b>Q: What makes Allbirds good for everyday wear under $150?</b><br>
-            Allbirds Wool Runners are designed for all-day comfort with a machine-washable upper and a carbon-light sole&hellip;<br><br>
-            <b>Q: How does Allbirds compare to Veja?</b><br>
-            Both are sustainability-led&hellip; <span style="color:var(--violet)">[VERIFY: pricing]</span>
-          </div>
-          <div class="pushrow">
-            <button class="btn btn-primary btn-sm">Copy the fix</button>
-            <span class="muted" style="font-size:12.5px">cites 6 AI responses</span>
+          <div class="dp-col">
+            <h4>Sources the AI cites</h4>
+            <div class="src"><span>runrepeat.com</span><span class="c">14</span></div>
+            <div class="src"><span>runnersworld.com</span><span class="c">9</span></div>
+            <div class="src"><span>reddit.com</span><span class="c">7</span></div>
+            <div class="src"><span>wirecutter.com</span><span class="c">5</span></div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- CTA -->
-  <section class="band">
-    <div class="wrap">
-      <div class="ctaband">
-        <h2>See what AI says about your brand.</h2>
-        <p>Run a free visibility audit in minutes. No credit card.</p>
-        <a class="btn btn-primary" href="/app">Open the app</a>
+    <!-- FEATURES -->
+    <section class="section" id="features">
+      <div class="sec-head"><span class="tag">What it does</span><h2>Measure, diagnose, and act on AI visibility.</h2></div>
+      <div class="feats">
+        <div class="feat"><div class="k">MEASURE</div><h3>Across every engine</h3><p>Mention rate, average position, and share of voice for GPT-5, Claude, and Perplexity, with a per-model breakdown.</p></div>
+        <div class="feat"><div class="k">DIAGNOSE</div><h3>The sources behind it</h3><p>The exact pages each AI cites when it answers, so you see precisely where you are absent.</p></div>
+        <div class="feat"><div class="k">VIBES</div><h3>How AI describes you</h3><p>The words assistants use for your brand, and the ones competitors own that you don't.</p></div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <footer>
-    <div class="wrap foot-in">
-      <span>&copy; 2026 Brand Visibility for the LLM Era</span>
-      <span class="faint">Neutral. Brand-paid only. Evidence-first.</span>
+    <!-- HOW -->
+    <section class="section" id="how">
+      <div class="sec-head"><span class="tag">How it works</span><h2>From a brand name to a publish-ready fix.</h2></div>
+      <div class="feats">
+        <div class="feat"><div class="k">01 · PANEL</div><h3>Real buyer questions</h3><p>Paste your own customer language and we build a grounded panel of the questions your buyers actually ask.</p></div>
+        <div class="feat"><div class="k">02 · ASK</div><h3>Query your own data</h3><p>Ask anything about your category; answers are grounded in the AI responses we collected for you.</p></div>
+        <div class="feat"><div class="k">03 · ACT</div><h3>A change you can ship</h3><p>Turn each gap into publish-ready content, built from the AI's own answers and the sources it trusts.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div class="wrap nav-in" style="border:0;height:auto">
+      <div class="logo" style="font-size:15px"><span class="mark"></span> Lighthouse</div>
+      <span>The measurement layer for AI search.</span>
     </div>
   </footer>
 
