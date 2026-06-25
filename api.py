@@ -69,7 +69,8 @@ def get_config() -> dict:
 class AuditRequest(BaseModel):
     brand: str
     category: str
-    context: str | None = None   # optional first-party context → grounded panel
+    context: str | None = None       # optional first-party context → grounded panel
+    competitor: str | None = None    # optional rival to benchmark against
 
 
 class GenerateRequest(BaseModel):
@@ -94,9 +95,21 @@ def start_audit(req: AuditRequest, background: BackgroundTasks) -> dict:
     if not brand or not category:
         raise HTTPException(status_code=400, detail="brand and category are required")
     context = (req.context or "").strip() or None
-    brand_id = store.create_brand(brand, category)
+    competitor = (req.competitor or "").strip() or None
+    brand_id = store.create_brand(brand, category, competitor)
     background.add_task(run_audit, brand_id, brand, category, context)
     return {"brand_id": brand_id, "status": "pending"}
+
+
+@app.post("/api/brands/{brand_id}/cancel")
+def cancel_audit(brand_id: int) -> dict:
+    """Cancel/kill a run: remove the brand and its rows. The background task
+    aborts on the next write (missing FK)."""
+    row = store.get_brand(brand_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="brand not found")
+    store.delete_brand(brand_id)
+    return {"ok": True}
 
 
 @app.get("/api/brands/{brand_id}")

@@ -123,31 +123,42 @@ _ASK_SYSTEM = (
     "context does not contain the answer, say so plainly. Be concise and concrete."
 )
 
+_ASK_SYSTEM_GENERAL = (
+    "You are a sharp research assistant for a marketing team. Answer the question "
+    "clearly and concretely. You do not have this brand's audit data indexed, so "
+    "answer from general knowledge about the brand, its category, and AI search. "
+    "Be useful and specific; don't pad."
+)
+
 
 def answer(brand_id: int, question: str, k: int = 6) -> dict:
     """
-    RAG answer over the brand's indexed context. Returns
-    {"answer": str, "sources": [chunk snippets]}.
+    Answer a question for a brand. If we have indexed data (the brand's context
+    and/or collected AI responses), the answer is grounded (RAG) and cites those
+    sources. If not, it falls back to a general answer so Ask always works as a
+    search/answer surface. Returns {"answer", "sources", "grounded"}.
     """
-    chunks = retrieve(brand_id, question, k=k)   # all kinds: context + AI responses
-    if not chunks:
-        return {
-            "answer": "Nothing to search yet. Run an audit for this brand first "
-                      "(and optionally paste your own context), then ask again.",
-            "sources": [],
-        }
-    context_block = "\n\n---\n\n".join(chunks)
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
+    chunks = retrieve(brand_id, question, k=k)   # all kinds: context + AI responses
+
+    if chunks:
+        context_block = "\n\n---\n\n".join(chunks)
+        resp = client.messages.create(
+            model=MODEL_ASK, max_tokens=600, system=_ASK_SYSTEM,
+            messages=[{"role": "user",
+                       "content": f"Context:\n{context_block}\n\nQuestion: {question}"}],
+        )
+        body = resp.content[0].text if resp.content else ""
+        sources = [c[:160] + ("…" if len(c) > 160 else "") for c in chunks]
+        return {"answer": body, "sources": sources, "grounded": True}
+
+    # Fallback: no indexed data -> general answer (still useful).
+    import store
+    brand = store.get_brand(brand_id)
+    ctx = f"Brand: {brand['name']}. Category: {brand['category']}.\n\n" if brand else ""
     resp = client.messages.create(
-        model=MODEL_ASK,
-        max_tokens=600,
-        system=_ASK_SYSTEM,
-        messages=[{
-            "role": "user",
-            "content": f"Context:\n{context_block}\n\nQuestion: {question}",
-        }],
+        model=MODEL_ASK, max_tokens=600, system=_ASK_SYSTEM_GENERAL,
+        messages=[{"role": "user", "content": f"{ctx}Question: {question}"}],
     )
     body = resp.content[0].text if resp.content else ""
-    # short snippets for the UI (first ~160 chars of each retrieved chunk)
-    sources = [c[:160] + ("…" if len(c) > 160 else "") for c in chunks]
-    return {"answer": body, "sources": sources}
+    return {"answer": body, "sources": [], "grounded": False}

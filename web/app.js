@@ -1,10 +1,12 @@
-// app.js - product dashboard. Vanilla fetch, two tabs: Overview + Action.
+// app.js — Lighthouse dashboard. Centered composer → results, with a lively
+// progress state, cancel, recent audits, head-to-head, and RAG Ask.
 
 const $ = (s) => document.querySelector(s);
-const listEl = $("#brand-list");
+const composer = $("#composer");
 const panel = $("#panel");
 let activeId = null;
 let pollTimer = null;
+let phraseTimer = null;
 let currentData = null;
 let currentTab = "overview";
 
@@ -16,47 +18,50 @@ async function api(path, opts) {
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
   return res.json();
 }
-
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-// --- list -------------------------------------------------------------------
+// --- view toggle ------------------------------------------------------------
 
-function statusBadge(s) {
-  if (s === "error") return `<span class="badge err">error</span>`;
-  return `<span class="badge run"><span class="spin"></span>${s || "pending"}</span>`;
+function showComposer() {
+  clearInterval(pollTimer); clearInterval(phraseTimer);
+  activeId = null;
+  panel.hidden = true;
+  composer.hidden = false;
+  loadRecent();
+}
+function showPanel() {
+  composer.hidden = true;
+  panel.hidden = false;
 }
 
-async function loadList() {
-  const brands = await api("/api/brands");
-  listEl.innerHTML = "";
-  if (!brands.length) {
-    listEl.innerHTML = `<li class="bi-cat">No audits yet. Run one above.</li>`;
-    return;
-  }
-  for (const b of brands) {
-    const li = document.createElement("li");
-    li.className = "brand-item" + (b.id === activeId ? " active" : "");
-    li.dataset.id = b.id;
-    const right = b.status === "done"
-      ? `<span class="bi-rate">${pct(b.mention_rate)}</span>`
-      : statusBadge(b.status);
-    li.innerHTML = `<div class="bi-top"><span class="bi-name">${escapeHtml(b.name)}</span>${right}</div>
-                    <div class="bi-cat">${escapeHtml(b.category)}</div>`;
-    li.onclick = () => selectBrand(b.id);
-    listEl.appendChild(li);
-  }
+// --- recent audits ----------------------------------------------------------
+
+async function loadRecent() {
+  let brands = [];
+  try { brands = await api("/api/brands"); } catch { /* ignore */ }
+  const el = $("#recent-list");
+  if (!brands.length) { el.innerHTML = `<span class="recent-empty">No audits yet.</span>`; return; }
+  el.innerHTML = brands.slice(0, 12).map((b) => {
+    const right = b.status === "done" ? pct(b.mention_rate)
+      : `<span class="dot-run"></span>${escapeHtml(b.status || "pending")}`;
+    return `<button class="recent-chip" data-id="${b.id}">
+      <span class="rc-name">${escapeHtml(b.name)}</span>
+      <span class="rc-cat">${escapeHtml(b.category)}</span>
+      <span class="rc-rate">${right}</span></button>`;
+  }).join("");
+  el.querySelectorAll(".recent-chip").forEach((c) =>
+    (c.onclick = () => selectBrand(Number(c.dataset.id))));
 }
 
 // --- selection + polling ----------------------------------------------------
 
 async function selectBrand(id) {
-  activeId = id;
-  currentTab = "overview";
+  activeId = id; currentTab = "overview";
   clearInterval(pollTimer);
-  [...listEl.children].forEach((c) => c.classList?.toggle("active", Number(c.dataset.id) === id));
+  showPanel();
   await refreshPanel();
 }
 
@@ -67,25 +72,73 @@ async function refreshPanel() {
   catch (e) { panel.innerHTML = `<div class="err-box">Could not load: ${escapeHtml(e.message)}</div>`; return; }
 
   if (data.status === "error") {
+    clearInterval(pollTimer); clearInterval(phraseTimer);
     panel.innerHTML = `<div class="err-box"><b>Audit failed.</b><br>
       ${escapeHtml(data.error_message || "Unknown error.")}<br><br>
-      This is usually a transient API hiccup. Re-run the audit (same brand + category) and it should go through.</div>`;
+      Usually a transient API hiccup — run it again.</div>
+      <div style="margin-top:14px"><button class="btn btn-ghost btn-sm" onclick="window.__newAudit()">Back</button></div>`;
     return;
   }
   if (data.status && data.status !== "done") {
-    panel.innerHTML = `<div class="loading"><span class="spin"></span>
-      Running audit for <b style="color:var(--ink);margin:0 4px">${escapeHtml(data.name)}</b> &middot; ${escapeHtml(data.status)}&hellip;</div>`;
+    renderProgress(data.status, data.name);
     clearInterval(pollTimer);
     pollTimer = setInterval(async () => {
       const s = await api(`/api/brands/${activeId}/status`).catch(() => null);
-      if (s && (s.status === "done" || s.status === "error")) {
-        clearInterval(pollTimer); await loadList(); await refreshPanel();
+      if (!s) return;
+      if (s.status === "done" || s.status === "error") {
+        clearInterval(pollTimer); clearInterval(phraseTimer);
+        await loadRecent(); await refreshPanel();
+      } else {
+        updateStage(s.status);
       }
-    }, 3000);
+    }, 2500);
     return;
   }
+  clearInterval(phraseTimer);
   currentData = data;
   render();
+}
+
+// --- lively progress --------------------------------------------------------
+
+const STAGE_TEXT = {
+  pending: "Starting up",
+  generating: "Generating real buyer questions",
+  probing: "Asking GPT-5, Claude & Perplexity",
+  parsing: "Reading what each AI said",
+};
+const PHRASES = [
+  "Triangulating across models…", "Cross-referencing cited sources…",
+  "Computing share of voice…", "Mapping the competitor set…",
+  "Distilling the verbal vibes…", "Normalizing brand names…",
+];
+
+function renderProgress(status, name) {
+  panel.innerHTML = `
+    <div class="run-card">
+      <div class="run-orbit"><span></span><span></span><span></span></div>
+      <div class="run-stage" id="run-stage">${escapeHtml(STAGE_TEXT[status] || "Working")}</div>
+      <div class="run-phrase" id="run-phrase">${PHRASES[0]}</div>
+      <div class="run-for">${name ? "for " + escapeHtml(name) : ""}</div>
+      <button class="btn btn-ghost btn-sm run-cancel" id="cancel-btn">Cancel</button>
+    </div>`;
+  $("#cancel-btn").onclick = cancelActive;
+  clearInterval(phraseTimer);
+  let i = 0;
+  phraseTimer = setInterval(() => {
+    i = (i + 1) % PHRASES.length;
+    const p = $("#run-phrase"); if (p) p.textContent = PHRASES[i];
+  }, 2200);
+}
+function updateStage(status) {
+  const el = $("#run-stage");
+  if (el) el.textContent = STAGE_TEXT[status] || "Working";
+}
+async function cancelActive() {
+  if (activeId == null) return;
+  const btn = $("#cancel-btn"); if (btn) { btn.disabled = true; btn.textContent = "Cancelling…"; }
+  try { await api(`/api/brands/${activeId}/cancel`, { method: "POST" }); } catch { /* ignore */ }
+  showComposer();
 }
 
 // --- render shell + tabs ----------------------------------------------------
@@ -102,13 +155,14 @@ function render() {
   panel.innerHTML = `
     <div class="dash-head">
       <div><h1 class="dash-title">${escapeHtml(d.name)}</h1><div class="dash-cat">${escapeHtml(d.category)}</div></div>
-      <div class="focal">canonical brand: <b>${escapeHtml(d.focal_canonical)}</b><br>${d.total_responses} responses analyzed</div>
+      <div class="focal">canonical: <b>${escapeHtml(d.focal_canonical)}</b><br>${d.total_responses} responses analyzed
+        <br><button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="window.__newAudit()">New audit</button></div>
     </div>
     <div class="tabs">
       <div class="tab ${currentTab === "overview" ? "active" : ""}" data-tab="overview">Overview</div>
-      <div class="tab ${currentTab === "vibes" ? "active" : ""}" data-tab="vibes">Vibes <span class="preview-tag" style="margin-left:6px">lexical</span></div>
-      <div class="tab ${currentTab === "action" ? "active" : ""}" data-tab="action">Action <span class="preview-tag" style="margin-left:6px">wedge</span></div>
-      <div class="tab ${currentTab === "ask" ? "active" : ""}" data-tab="ask">Ask <span class="preview-tag" style="margin-left:6px">RAG</span></div>
+      <div class="tab ${currentTab === "vibes" ? "active" : ""}" data-tab="vibes">Vibes</div>
+      <div class="tab ${currentTab === "action" ? "active" : ""}" data-tab="action">Action</div>
+      <div class="tab ${currentTab === "ask" ? "active" : ""}" data-tab="ask">Ask</div>
     </div>
     <div id="tabbody"></div>`;
   panel.querySelectorAll(".tab").forEach((t) =>
@@ -117,71 +171,6 @@ function render() {
   else if (currentTab === "vibes") renderVibes();
   else if (currentTab === "action") renderAction();
   else renderAsk();
-}
-
-function renderVibes() {
-  const d = currentData;
-  const lex = d.lexical || {};
-  const top = lex.focal_top || [];
-  const maxC = lex.max_count || 1;
-
-  // frequency-scaled chips = lightweight word cloud (font 13→26px by count)
-  const cloud = top.length
-    ? top.map((x) => {
-        const size = 13 + Math.round((x.count / maxC) * 13);
-        const op = 0.55 + 0.45 * (x.count / maxC);
-        return `<span class="vibe" style="font-size:${size}px;opacity:${op}" title="${x.count} mentions">${escapeHtml(x.term)}</span>`;
-      }).join("")
-    : `<div class="bi-cat">No descriptors captured yet. Re-run an audit to capture how AI describes ${escapeHtml(d.name)}.</div>`;
-
-  const ownChips = (arr) => (arr && arr.length)
-    ? arr.map((x) => `<span class="vibe-pill">${escapeHtml(x.term)}<span class="vc">${x.count}</span></span>`).join("")
-    : `<div class="bi-cat">Nothing distinctive yet.</div>`;
-
-  $("#tabbody").innerHTML = `
-    <p class="muted" style="margin:-4px 0 16px">The <b>lexical environment</b>: the words AI assistants actually use to describe ${escapeHtml(d.name)} and rivals. Lean into the vibes you already own.</p>
-    <div class="card">
-      <h4>How AI describes ${escapeHtml(d.name)}</h4>
-      <div class="vibe-cloud">${cloud}</div>
-    </div>
-    <div class="cards2">
-      <div class="card vibe-own"><h4>Vibes you own <span class="preview-tag" style="margin-left:6px">lean in</span></h4><div class="vibe-pills">${ownChips(lex.you_own)}</div></div>
-      <div class="card vibe-them"><h4>Vibes competitors own</h4><div class="vibe-pills">${ownChips(lex.they_own)}</div></div>
-    </div>`;
-}
-
-function renderAsk() {
-  const d = currentData;
-  $("#tabbody").innerHTML = `
-    <p class="muted" style="margin:-4px 0 16px">Ask anything about ${escapeHtml(d.name)}. Answers are grounded (retrieval-augmented) in the AI responses we collected for this brand, plus any first-party context you added.</p>
-    <div class="ask-box">
-      <input id="ask-q" type="text" placeholder="e.g. what do our buyers care about most? why might AI skip us?" autocomplete="off" />
-      <button id="ask-btn" class="btn btn-primary btn-sm">Ask</button>
-    </div>
-    <div id="ask-out"></div>`;
-
-  const out = $("#ask-out");
-  const run = async () => {
-    const q = $("#ask-q").value.trim();
-    if (!q) return;
-    const btn = $("#ask-btn");
-    btn.disabled = true; btn.textContent = "Thinking…";
-    out.innerHTML = `<div class="loading"><span class="spin"></span> Retrieving and answering…</div>`;
-    try {
-      const res = await api(`/api/brands/${d.brand_id}/ask`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q }),
-      });
-      const sources = (res.sources || [])
-        .map((s) => `<div class="ask-src">${escapeHtml(s)}</div>`).join("");
-      out.innerHTML = `<div class="card ask-answer">${escapeHtml(res.answer).replace(/\n/g, "<br>")}</div>
-        ${sources ? `<div class="ask-srcs"><h4>Grounded on</h4>${sources}</div>` : ""}`;
-    } catch (err) {
-      out.innerHTML = `<div class="err-box">Could not answer: ${escapeHtml(err.message)}</div>`;
-    } finally { btn.disabled = false; btn.textContent = "Ask"; }
-  };
-  $("#ask-btn").onclick = run;
-  $("#ask-q").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
 }
 
 function renderOverview() {
@@ -197,44 +186,34 @@ function renderOverview() {
   const n = d.normalization || {};
   const prov = d.provenance || {};
   const provSources = (prov.top_sources || [])
-    .map((s) => `<div class="provrow"><a href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.domain)}</a><span class="meta">${s.count}</span></div>`)
-    .join("");
+    .map((s) => `<div class="provrow"><a href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.domain)}</a><span class="meta">${s.count}</span></div>`).join("");
   const provCard = (prov.top_sources && prov.top_sources.length)
-    ? `<div class="card prov-card">
-        <h4>Sources the AI cites <span class="preview-tag" style="margin-left:6px">the why</span></h4>
-        <p class="muted" style="margin:-4px 0 12px;font-size:13px">From ${prov.responses_with_sources} retrieval answers via ${escapeHtml((prov.engines || []).join(", ") || "Perplexity")}. These are the pages the engine trusts in this category. Where you are absent from the top sources is where you lose.</p>
-        <div class="provrows">${provSources}</div>
-      </div>`
-    : `<div class="card prov-card">
-        <h4>Sources the AI cites <span class="preview-tag" style="margin-left:6px">the why</span></h4>
-        <p class="bi-cat">No citations captured yet. This needs a retrieval engine: add a Perplexity key and re-run to see the sources behind each answer.</p>
-      </div>`;
-  const pnl = d.panel;
-  const panelCard = pnl
-    ? `<div class="panel-band ${pnl.grounded ? "grounded" : ""}">
-        <div class="pb-head">
-          <span class="pb-tag">${pnl.grounded ? "Grounded panel" : "Generic panel"}</span>
-          <span class="pb-meta">v${pnl.version} &middot; ${pnl.query_count} buyer queries &middot; frozen</span>
-        </div>
-        ${pnl.grounded
-          ? (pnl.seed_summary ? `<div class="pb-summary">${escapeHtml(pnl.seed_summary)}</div>` : "")
-          : `<div class="pb-summary muted">Generic questions. Add your own customer context on the next run to ground the panel in how your buyers actually ask.</div>`}
-      </div>`
+    ? `<div class="card prov-card"><h4>Sources the AI cites</h4>
+        <p class="muted" style="margin:-4px 0 12px;font-size:13px">From ${prov.responses_with_sources} retrieval answers via ${escapeHtml((prov.engines || []).join(", ") || "Perplexity")}. Where you're absent from the top sources is where you lose.</p>
+        <div class="provrows">${provSources}</div></div>`
     : "";
+
+  // head-to-head vs a chosen competitor
+  const kc = d.key_competitor;
+  const h2h = kc ? `<div class="card h2h">
+      <h4>Head to head</h4>
+      <div class="h2h-row"><span class="h2h-name focal-row">${escapeHtml(d.focal_canonical)} (you)</span>
+        <div class="bar focal"><span style="width:${Math.round((kc.you_rate||0)*100)}%"></span></div><span class="meta">${pct(kc.you_rate)}</span></div>
+      <div class="h2h-row"><span class="h2h-name">${escapeHtml(kc.brand)}</span>
+        <div class="bar"><span style="width:${Math.round((kc.rate||0)*100)}%"></span></div><span class="meta">${pct(kc.rate)}</span></div>
+    </div>` : "";
+
   $("#tabbody").innerHTML = `
-    ${panelCard}
+    ${h2h}
     <div class="kpis">
       <div class="kpi"><div class="label">Mention rate</div><div class="val accent">${pct(d.mention_rate)}</div></div>
       <div class="kpi"><div class="label">Avg position</div><div class="val">${num(d.avg_position)}</div></div>
       <div class="kpi"><div class="label">Share of voice</div><div class="val">${pct(d.share_of_voice)}</div></div>
       <div class="kpi"><div class="label">Responses</div><div class="val">${d.total_responses}</div></div>
     </div>
-    <div class="norm">
-      <div class="big">${n.merged ?? 0}</div>
-      <div class="txt">raw brand variants merged by <b>brand-identity normalization</b>.<br>
-        ${n.raw_variants ?? 0} raw mentions resolved to <b>${n.canonical_brands ?? 0}</b> real brands.
-        Without this, "${escapeHtml(d.focal_canonical)}" and its product names would be counted separately.</div>
-    </div>
+    <div class="norm"><div class="big">${n.merged ?? 0}</div>
+      <div class="txt">raw variants merged by <b>brand-identity normalization</b>.<br>
+        ${n.raw_variants ?? 0} raw mentions resolved to <b>${n.canonical_brands ?? 0}</b> real brands.</div></div>
     <div class="cards2">
       <div class="card"><h4>You vs competitors (mentions)</h4>${focalBar}${competitors || '<div class="bi-cat">No competitors found.</div>'}</div>
       <div class="card"><h4>By model</h4>${models || '<div class="bi-cat">No model data.</div>'}</div>
@@ -242,93 +221,136 @@ function renderOverview() {
     ${provCard}`;
 }
 
+function renderVibes() {
+  const d = currentData;
+  const lex = d.lexical || {};
+  const top = lex.focal_top || [];
+  const maxC = lex.max_count || 1;
+  const cloud = top.length
+    ? top.map((x) => {
+        const size = 13 + Math.round((x.count / maxC) * 13);
+        const op = 0.55 + 0.45 * (x.count / maxC);
+        return `<span class="vibe" style="font-size:${size}px;opacity:${op}" title="${x.count} mentions">${escapeHtml(x.term)}</span>`;
+      }).join("")
+    : `<div class="bi-cat">No descriptors captured yet for ${escapeHtml(d.name)}.</div>`;
+  const ownChips = (arr) => (arr && arr.length)
+    ? arr.map((x) => `<span class="vibe-pill">${escapeHtml(x.term)}<span class="vc">${x.count}</span></span>`).join("")
+    : `<div class="bi-cat">Nothing distinctive yet.</div>`;
+  $("#tabbody").innerHTML = `
+    <p class="muted" style="margin:-4px 0 16px">The words AI assistants use to describe ${escapeHtml(d.name)} and rivals. Lean into the vibes you already own.</p>
+    <div class="card"><h4>How AI describes ${escapeHtml(d.name)}</h4><div class="vibe-cloud">${cloud}</div></div>
+    <div class="cards2">
+      <div class="card vibe-own"><h4>Vibes you own</h4><div class="vibe-pills">${ownChips(lex.you_own)}</div></div>
+      <div class="card vibe-them"><h4>Vibes competitors own</h4><div class="vibe-pills">${ownChips(lex.they_own)}</div></div>
+    </div>`;
+}
+
 function renderAction() {
   const d = currentData;
   const comps = (d.competitors || []).slice(0, 4);
-  const cards = comps.map((c, i) => `
-    <div class="rec" data-i="${i}">
-      <div class="rec-top">
-        <span class="who">${escapeHtml(c.brand)} is winning here</span>
-        <span class="meta muted">${pct(c.rate)} of answers${c.avg_position != null ? " &middot; pos " + c.avg_position : ""}</span>
-      </div>
-      <p>${escapeHtml(c.brand)} is recommended in ${pct(c.rate)} of responses while ${escapeHtml(d.focal_canonical)} sits at ${pct(d.mention_rate)}.
-         Generate a publish-ready fix that targets this gap and cites the AI responses behind it.</p>
-      <div class="rec-actions">
-        <button class="btn btn-primary btn-sm gen" data-comp="${escapeHtml(c.brand)}">Generate fix</button>
-        <button class="btn btn-ghost btn-sm push">Copy &amp; push <span class="preview-tag" style="margin-left:6px">preview</span></button>
-      </div>
-      <div class="gen-out"></div>
-      <div class="push-note"></div>
+  const cards = comps.map((c) => `
+    <div class="rec" data-comp="${escapeHtml(c.brand)}">
+      <div class="rec-top"><span class="who">${escapeHtml(c.brand)} is winning here</span>
+        <span class="meta muted">${pct(c.rate)} of answers</span></div>
+      <p>${escapeHtml(c.brand)} is recommended in ${pct(c.rate)} of responses while ${escapeHtml(d.focal_canonical)} sits at ${pct(d.mention_rate)}. Generate a publish-ready fix that targets this gap.</p>
+      <div class="rec-actions"><button class="btn btn-primary btn-sm gen" data-comp="${escapeHtml(c.brand)}">Generate fix</button>
+        <button class="btn btn-ghost btn-sm push">Copy the fix</button></div>
+      <div class="gen-out"></div><div class="push-note"></div>
     </div>`).join("");
-
   $("#tabbody").innerHTML = `
-    <p class="muted" style="margin:-4px 0 16px">The wedge: measurement tells you where you lose. This turns each gap into a publish-ready change, in one step.</p>
+    <p class="muted" style="margin:-4px 0 16px">Turn each gap into a publish-ready change, grounded in the AI's own answers.</p>
     ${cards || '<div class="card">Run an audit with competitors to see action recommendations.</div>'}`;
-
   $("#tabbody").querySelectorAll(".rec").forEach((card) => {
     const out = card.querySelector(".gen-out");
     card.querySelector(".gen").onclick = async (e) => {
-      const btn = e.currentTarget;
-      const comp = btn.dataset.comp;
+      const btn = e.currentTarget; const comp = btn.dataset.comp;
       btn.disabled = true; btn.textContent = "Generating…";
       try {
         const art = await api("/api/recommendations/generate", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ brand_id: d.brand_id, competitor: comp }),
         });
-        out.textContent = art.body || "(no content)";
-        out.classList.add("show");
-      } catch (err) {
-        out.textContent = "Could not generate: " + err.message; out.classList.add("show");
-      } finally { btn.disabled = false; btn.textContent = "Generate fix"; }
+        out.textContent = art.body || "(no content)"; out.classList.add("show");
+      } catch (err) { out.textContent = "Could not generate: " + err.message; out.classList.add("show"); }
+      finally { btn.disabled = false; btn.textContent = "Generate fix"; }
     };
     const note = card.querySelector(".push-note");
-    const flash = (msg, tone) => {
-      note.textContent = msg;
-      note.className = "push-note show" + (tone ? " " + tone : "");
-    };
     card.querySelector(".push").onclick = async () => {
       const text = out.textContent.trim();
-      if (!out.classList.contains("show") || !text) {
-        flash("Generate the fix first, then copy it to push into your CMS.", "warn");
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(text);
-        flash("Copied. Paste into your CMS to publish. Direct one-click push (Shopify / Webflow / WordPress) ships in v2.", "ok");
-      } catch {
-        flash("Select the text above to copy. Direct push (Shopify / Webflow / WordPress) ships in v2.", "ok");
-      }
+      if (!out.classList.contains("show") || !text) { note.textContent = "Generate the fix first."; note.className = "push-note show warn"; return; }
+      try { await navigator.clipboard.writeText(text); note.textContent = "Copied. Paste into your CMS to publish."; note.className = "push-note show ok"; }
+      catch { note.textContent = "Select the text above to copy."; note.className = "push-note show ok"; }
     };
   });
 }
 
-// --- new audit --------------------------------------------------------------
+function renderAsk() {
+  const d = currentData;
+  $("#tabbody").innerHTML = `
+    <p class="muted" style="margin:-4px 0 16px">Ask anything about ${escapeHtml(d.name)}. Answers use this brand's collected AI data when available, otherwise general knowledge.</p>
+    <div class="ask-box"><input id="ask-q" type="text" placeholder="e.g. why do buyers pick competitors? what should we change?" autocomplete="off" />
+      <button id="ask-btn" class="btn btn-primary btn-sm">Ask</button></div>
+    <div id="ask-out"></div>`;
+  const out = $("#ask-out");
+  const run = async () => {
+    const q = $("#ask-q").value.trim(); if (!q) return;
+    const btn = $("#ask-btn"); btn.disabled = true; btn.textContent = "Thinking…";
+    out.innerHTML = `<div class="loading"><span class="spin"></span> Retrieving and answering…</div>`;
+    try {
+      const res = await api(`/api/brands/${d.brand_id}/ask`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q }) });
+      const tag = res.grounded
+        ? `<span class="ask-tag ok">grounded in your data</span>`
+        : `<span class="ask-tag">general answer</span>`;
+      const sources = (res.sources || []).map((s) => `<div class="ask-src">${escapeHtml(s)}</div>`).join("");
+      out.innerHTML = `<div class="card ask-answer">${tag}${escapeHtml(res.answer).replace(/\n/g, "<br>")}</div>
+        ${sources ? `<div class="ask-srcs"><h4>Grounded on</h4>${sources}</div>` : ""}`;
+    } catch (err) { out.innerHTML = `<div class="err-box">Could not answer: ${escapeHtml(err.message)}</div>`; }
+    finally { btn.disabled = false; btn.textContent = "Ask"; }
+  };
+  $("#ask-btn").onclick = run;
+  $("#ask-q").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+}
+
+// --- composer ---------------------------------------------------------------
 
 $("#audit-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const brand = $("#f-brand").value.trim();
   const category = $("#f-category").value.trim();
   const context = $("#f-context").value.trim();
+  const competitor = $("#f-competitor").value.trim();
   if (!brand || !category) return;
-  const btn = $("#run-btn");
-  btn.disabled = true; btn.textContent = "Starting…";
+  const btn = $("#run-btn"); btn.disabled = true; btn.textContent = "Starting…";
   try {
     const res = await api("/api/audits", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ brand, category, context }),
-    });
+      body: JSON.stringify({ brand, category, context, competitor }) });
     $("#f-brand").value = ""; $("#f-category").value = ""; $("#f-context").value = "";
-    await loadList(); await selectBrand(res.brand_id);
+    $("#f-competitor").value = ""; $("#attach-label").textContent = "Attach file";
+    await selectBrand(res.brand_id);
   } catch (err) { alert("Could not start audit: " + err.message); }
   finally { btn.disabled = false; btn.textContent = "Run audit"; }
 });
 
-$("#refresh").addEventListener("click", loadList);
+// example chips fill the category
+document.querySelectorAll("#cat-examples .ex-chip").forEach((ch) =>
+  (ch.onclick = () => { $("#f-category").value = ch.textContent.trim(); $("#f-brand").focus(); }));
 
-// Example category chips fill the field (and nudge focus to brand).
-document.querySelectorAll("#cat-examples .ex-chip").forEach((ch) => {
-  ch.addEventListener("click", () => { $("#f-category").value = ch.textContent.trim(); $("#f-brand").focus(); });
+// file attach → read text into the context box
+$("#f-file").addEventListener("change", (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const cur = $("#f-context").value.trim();
+    $("#f-context").value = (cur ? cur + "\n\n" : "") + String(r.result).slice(0, 20000);
+    $("#attach-label").textContent = file.name;
+  };
+  r.readAsText(file);
 });
 
-loadList();
+$("#new-audit").onclick = showComposer;
+window.__newAudit = showComposer;
+
+showComposer();

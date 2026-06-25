@@ -8,53 +8,57 @@
 </head>
 <body class="app-body">
   <nav class="nav">
-    <div class="wrap nav-in" style="max-width:100%">
+    <div class="wrap nav-in" style="max-width:1180px">
       <a class="logo" href="/"><span class="mark"></span> Lighthouse</a>
       <div class="nav-cta">
-        <a class="btn btn-ghost btn-sm" href="/">Home</a>
+        <button class="btn btn-ghost btn-sm" id="new-audit">New audit</button>
         <a class="btn btn-ghost btn-sm" id="signin-btn" href="#">Sign in</a>
         <span id="user-slot" class="cl-hidden"></span>
       </div>
     </div>
   </nav>
 
-  <div class="app-shell">
-    <aside class="side">
-      <form id="audit-form" class="newaudit">
-        <h2>Run an audit</h2>
-        <label>Brand or firm
-          <input id="f-brand" type="text" placeholder="e.g. Allbirds" autocomplete="off" required />
-          <span class="sublabel">The brand, company, or firm you want to measure.</span>
-        </label>
-        <label>Category
-          <input id="f-category" type="text" placeholder="running shoes, CRM software, immigration law&hellip;" autocomplete="off" required />
-          <span class="sublabel">Any category &mdash; a product, service, software, or type of firm. <b>Not a question.</b> We turn it into a panel of real buyer queries for you.</span>
-        </label>
-        <div class="ex-chips" id="cat-examples">
-          <span class="ex-chip">running shoes</span>
-          <span class="ex-chip">CRM software</span>
-          <span class="ex-chip">personal injury lawyers</span>
-          <span class="ex-chip">project management tools</span>
-        </div>
-        <label>Your context <span class="opt">optional</span>
-          <textarea id="f-context" rows="4" placeholder="Paste reviews, support tickets, positioning, or how your customers describe the product..."></textarea>
-          <span class="sublabel">Paste your own customer language and we build a <b>grounded panel</b> from how <i>your</i> buyers actually ask &mdash; not generic questions. This is the depth that makes the measurement yours.</span>
-        </label>
-        <button id="run-btn" class="btn btn-primary" type="submit">Run audit</button>
-        <p class="hint">Works for any category &mdash; products, services, software, or firms. Probes GPT-5, Claude &amp; Perplexity (with citations). Grounded panel = 40 queries; generic = 20. ~60-120s.</p>
-      </form>
-      <div class="list-head"><h2>Audits</h2><button id="refresh" class="ghost" title="Refresh">&#x21bb;</button></div>
-      <ul id="brand-list" class="brand-list"></ul>
-    </aside>
+  <main class="main" id="main">
+    <!-- CENTERED COMPOSER (the product's front door) -->
+    <section class="composer-wrap" id="composer">
+      <h1 class="composer-title">Measure your brand in AI search</h1>
+      <p class="composer-sub">See whether ChatGPT, Claude, and Perplexity recommend you, who wins instead, and why.</p>
 
-    <section id="panel" class="panel">
-      <div class="empty">
-        <div class="empty-mark"></div>
-        <h3>Pick an audit, or run a new one.</h3>
-        <p>You will see mention rate, position, share of voice, the model split, the real competitor set after normalization, and the action wedge.</p>
+      <form id="audit-form" class="composer">
+        <div class="composer-row">
+          <input id="f-brand" class="c-brand" type="text" placeholder="Your brand or firm" autocomplete="off" required />
+          <span class="c-sep">in</span>
+          <input id="f-category" class="c-cat" type="text" placeholder="any category — running shoes, CRM software, immigration law…" autocomplete="off" required />
+        </div>
+        <textarea id="f-context" class="c-context" rows="2" placeholder="Optional: paste reviews, positioning, or customer language for a deeper, grounded audit…"></textarea>
+        <div class="composer-foot">
+          <div class="composer-opts">
+            <input id="f-competitor" class="c-comp" type="text" placeholder="Compare vs a competitor (optional)" autocomplete="off" />
+            <label class="attach" title="Attach a text file (.txt, .md, .csv)">
+              <input id="f-file" type="file" accept=".txt,.md,.markdown,.csv,.json" hidden />
+              <span class="attach-ic">📎</span> <span id="attach-label">Attach file</span>
+            </label>
+          </div>
+          <button id="run-btn" class="btn btn-primary" type="submit">Run audit</button>
+        </div>
+      </form>
+
+      <div class="ex-chips" id="cat-examples">
+        <span class="ex-chip">running shoes</span>
+        <span class="ex-chip">CRM software</span>
+        <span class="ex-chip">personal injury lawyers</span>
+        <span class="ex-chip">project management tools</span>
+      </div>
+
+      <div class="recent" id="recent-wrap">
+        <div class="recent-head">Recent audits</div>
+        <div class="recent-list" id="recent-list"></div>
       </div>
     </section>
-  </div>
+
+    <!-- RESULTS -->
+    <section id="panel" class="panel" hidden></section>
+  </main>
 
   <script src="/auth.js"></script>
   <script src="/app.js"></script>

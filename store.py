@@ -31,14 +31,15 @@ def migrate() -> None:
 
 # --- Brand / audit lifecycle ------------------------------------------------
 
-def create_brand(name: str, category: str) -> int:
+def create_brand(name: str, category: str, key_competitor: str | None = None) -> int:
     """Insert a brand row in 'pending' status. Returns brand_id."""
     canon = BrandResolver(known_brands=[name]).canonicalize(name)
+    kc = (key_competitor or "").strip() or None
     with v0.get_conn() as conn:
         row = conn.execute(
-            "INSERT INTO brands (name, category, status, canonical_name) "
-            "VALUES (%s, %s, %s, %s) RETURNING id",
-            (name, category, "pending", canon),
+            "INSERT INTO brands (name, category, status, canonical_name, key_competitor) "
+            "VALUES (%s, %s, %s, %s, %s) RETURNING id",
+            (name, category, "pending", canon, kc),
         ).fetchone()
         return row["id"]
 
@@ -49,6 +50,25 @@ def set_status(brand_id: int, status: str, error: str | None = None) -> None:
             "UPDATE brands SET status = %s, error_message = %s WHERE id = %s",
             (status, error, brand_id),
         )
+
+
+def delete_brand(brand_id: int) -> None:
+    """Remove a brand and all its rows (used by cancel). FK-safe order. Deleting
+    a mid-run brand also kills its background audit: subsequent writes hit a
+    missing FK and the task aborts harmlessly."""
+    with v0.get_conn() as conn:
+        conn.execute("DELETE FROM context_chunks WHERE brand_id=%s", (brand_id,))
+        conn.execute("DELETE FROM panel_queries WHERE panel_id IN "
+                     "(SELECT id FROM query_panels WHERE brand_id=%s)", (brand_id,))
+        conn.execute("DELETE FROM query_panels WHERE brand_id=%s", (brand_id,))
+        conn.execute("DELETE FROM context_documents WHERE brand_id=%s", (brand_id,))
+        conn.execute("DELETE FROM parsed_responses WHERE response_id IN "
+                     "(SELECT r.id FROM responses r JOIN queries q ON q.id=r.query_id "
+                     "WHERE q.brand_id=%s)", (brand_id,))
+        conn.execute("DELETE FROM responses WHERE query_id IN "
+                     "(SELECT id FROM queries WHERE brand_id=%s)", (brand_id,))
+        conn.execute("DELETE FROM queries WHERE brand_id=%s", (brand_id,))
+        conn.execute("DELETE FROM brands WHERE id=%s", (brand_id,))
 
 
 def get_sample_query(brand_id: int) -> str | None:
@@ -64,8 +84,8 @@ def get_sample_query(brand_id: int) -> str | None:
 def get_brand(brand_id: int) -> dict | None:
     with v0.get_conn() as conn:
         return conn.execute(
-            "SELECT id, name, category, created_at, status, canonical_name, error_message "
-            "FROM brands WHERE id = %s",
+            "SELECT id, name, category, created_at, status, canonical_name, error_message, "
+            "key_competitor FROM brands WHERE id = %s",
             (brand_id,),
         ).fetchone()
 
@@ -495,6 +515,27 @@ def aggregate_brand(brand_id: int) -> dict:
         for m in sorted(model_total)
     ]
 
+    # Head-to-head against a client-chosen competitor (pinned even if it rarely
+    # appears, so a small business can benchmark against the rival it cares about).
+    key_competitor = None
+    kc_name = brand["key_competitor"] if "key_competitor" in brand.keys() else None
+    if kc_name:
+        kc_canon = resolver.canonicalize(kc_name) or kc_name
+        kc_cf = kc_canon.casefold()
+        kc_count, kc_pos = 0, None
+        for b, n in comp_hits.items():
+            if b.casefold() == kc_cf:
+                kc_count = n
+                kc_pos = avg(comp_positions.get(b, []))
+                break
+        key_competitor = {
+            "brand": kc_canon,
+            "mentions": kc_count,
+            "rate": round(kc_count / total, 3) if total else 0,
+            "avg_position": kc_pos,
+            "you_rate": round(focal_hits / total, 3) if total else 0,
+        }
+
     return {
         "brand_id": brand_id,
         "name": brand["name"],
@@ -516,6 +557,7 @@ def aggregate_brand(brand_id: int) -> dict:
         "provenance": _build_provenance(citation_rows),
         "panel": get_active_panel(brand_id),
         "lexical": _build_lexical(lex_focal, lex_comp),
+        "key_competitor": key_competitor,
     }
 
 

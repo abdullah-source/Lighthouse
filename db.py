@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS brands (
     canonical_name  TEXT,
     error_message   TEXT,
     mention_rate    REAL,        -- denormalized headline metric for the fast list view
-    total_responses INTEGER
+    total_responses INTEGER,
+    key_competitor  TEXT         -- optional rival the client wants to benchmark against
 );
 
 CREATE TABLE IF NOT EXISTS queries (
@@ -188,6 +189,7 @@ def init_db() -> None:
         # Add denormalized headline columns to a pre-existing brands table.
         conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS mention_rate REAL")
         conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS total_responses INTEGER")
+        conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS key_competitor TEXT")
 
 
 # --- Insert helpers (RETURNING id) ------------------------------------------
