@@ -42,8 +42,9 @@ from config import (
 # A single instruction we give both models. We keep it generic — we're
 # simulating a consumer asking an AI assistant, not coaching the model.
 _PROBE_SYSTEM_PROMPT = (
-    "You are a helpful shopping assistant. The user is researching a "
-    "purchase. Recommend specific products or brands by name, and "
+    "You are a helpful assistant. The user is researching what to choose for "
+    "a need — this could be a product, service, software, or a provider/firm. "
+    "Recommend specific brands, products, companies, or firms by name, and "
     "briefly explain why. Be concrete — vague answers are unhelpful."
 )
 

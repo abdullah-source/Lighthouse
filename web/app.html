@@ -22,26 +22,26 @@
     <aside class="side">
       <form id="audit-form" class="newaudit">
         <h2>Run an audit</h2>
-        <label>Brand
-          <input id="f-brand" type="text" placeholder="Allbirds" autocomplete="off" required />
-          <span class="sublabel">The brand you want to measure.</span>
+        <label>Brand or firm
+          <input id="f-brand" type="text" placeholder="e.g. Allbirds" autocomplete="off" required />
+          <span class="sublabel">The brand, company, or firm you want to measure.</span>
         </label>
         <label>Category
-          <input id="f-category" type="text" placeholder="running shoes" autocomplete="off" required />
-          <span class="sublabel">The product category buyers shop in &mdash; <b>not a question</b>. We turn it into a panel of real buyer queries for you.</span>
+          <input id="f-category" type="text" placeholder="running shoes, CRM software, immigration law&hellip;" autocomplete="off" required />
+          <span class="sublabel">Any category &mdash; a product, service, software, or type of firm. <b>Not a question.</b> We turn it into a panel of real buyer queries for you.</span>
         </label>
         <div class="ex-chips" id="cat-examples">
           <span class="ex-chip">running shoes</span>
-          <span class="ex-chip">sustainable footwear</span>
-          <span class="ex-chip">trail running shoes</span>
-          <span class="ex-chip">shoes for ankle pain</span>
+          <span class="ex-chip">CRM software</span>
+          <span class="ex-chip">personal injury lawyers</span>
+          <span class="ex-chip">project management tools</span>
         </div>
         <label>Your context <span class="opt">optional</span>
           <textarea id="f-context" rows="4" placeholder="Paste reviews, support tickets, positioning, or how your customers describe the product..."></textarea>
           <span class="sublabel">Paste your own customer language and we build a <b>grounded panel</b> from how <i>your</i> buyers actually ask &mdash; not generic questions. This is the depth that makes the measurement yours.</span>
         </label>
         <button id="run-btn" class="btn btn-primary" type="submit">Run audit</button>
-        <p class="hint">Footwear is the focus vertical for now. Probes GPT-5, Claude &amp; Perplexity (with citations). Grounded panel = 40 queries; generic = 20. ~60-120s.</p>
+        <p class="hint">Works for any category &mdash; products, services, software, or firms. Probes GPT-5, Claude &amp; Perplexity (with citations). Grounded panel = 40 queries; generic = 20. ~60-120s.</p>
       </form>
       <div class="list-head"><h2>Audits</h2><button id="refresh" class="ghost" title="Refresh">&#x21bb;</button></div>
       <ul id="brand-list" class="brand-list"></ul>

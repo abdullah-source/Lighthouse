@@ -18,15 +18,18 @@ from config import ANTHROPIC_API_KEY, MODEL_QUERY_GEN, PANEL_SIZE, QUERIES_PER_B
 # - We push for diversity along several axes (price, persona, use case)
 #   so the queries actually cover the buying funnel — not 20 variations
 #   of the same question.
-_SYSTEM_PROMPT = """You are a consumer research analyst. Your job is to
-produce realistic, high-intent buyer queries that real consumers ask AI
-assistants when shopping in a given category.
+_SYSTEM_PROMPT = """You are a research analyst. Your job is to produce
+realistic, high-intent queries that real people ask AI assistants when deciding
+what to choose in a given category. The category can be anything: a consumer
+product, a service, software, or a provider/firm.
 
 Rules:
-- Each query is something a real shopper would type or speak.
-- Cover a range of buying intent: discovery, comparison, specific use case, budget, persona.
-- Mix specific ("running shoes for flat feet under $150") with broad ("best sustainable sneakers").
-- Do NOT mention the brand name we're studying — these are open queries
+- Each query is something a real decision-maker would type or speak.
+- Cover a range of intent: discovery, comparison, specific use case, budget, persona.
+- Mix specific ("running shoes for flat feet under $150", "CRM for a 10-person
+  sales team", "employment lawyer for a wrongful termination case") with broad
+  ("best sustainable sneakers", "top project management tools").
+- Do NOT mention the brand/firm name we're studying — these are open queries
   where the LLM would freely choose what to recommend.
 - Output ONLY the numbered list. No preamble, no commentary, no markdown.
 """
@@ -141,7 +144,7 @@ _PANEL_TOOL = {
                         },
                         "query": {
                             "type": "string",
-                            "description": "What a real shopper would ask the AI.",
+                            "description": "What a real decision-maker would ask the AI.",
                         },
                     },
                     "required": ["intent", "query"],
@@ -153,17 +156,18 @@ _PANEL_TOOL = {
 }
 
 
-_GROUNDED_SYSTEM_PROMPT = """You are a consumer research analyst. You are given a
-brand, its category, and raw first-party context from the brand (reviews,
-support tickets, positioning, customer language). Produce realistic, high-intent
-buyer queries that real consumers in THIS brand's audience ask AI assistants
-when shopping in the category.
+_GROUNDED_SYSTEM_PROMPT = """You are a research analyst. You are given a
+brand/firm, its category, and raw first-party context from it (reviews, support
+tickets, positioning, customer language). The category can be anything: a
+product, service, software, or provider/firm. Produce realistic, high-intent
+queries that real decision-makers in THIS audience ask AI assistants when
+choosing in the category.
 
 Rules:
 - Ground the queries in the language, use cases, personas, and objections that
-  actually appear in the provided context. Mirror how these specific buyers talk.
-- Do NOT mention the brand name in the queries. These are open queries where the
-  LLM would freely choose what to recommend.
+  actually appear in the provided context. Mirror how these specific people talk.
+- Do NOT mention the brand/firm name in the queries. These are open queries where
+  the LLM would freely choose what to recommend.
 - Cover a range of intent: discovery, comparison, specific use case, budget,
   persona. Mix specific with broad.
 - De-duplicate. Each query should be distinct.
