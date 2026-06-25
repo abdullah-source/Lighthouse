@@ -395,21 +395,36 @@ def aggregate_brand(brand_id: int) -> dict:
         model = r["model"]
         model_total[model] = model_total.get(model, 0) + 1
 
-        raw_brands = json.loads(r["brands_mentioned"]) if r["brands_mentioned"] else []
-        positions = json.loads(r["positions"]) if r["positions"] else {}
+        # Defensive: the model can occasionally return a non-conforming shape
+        # (a string instead of a list/object). Coerce to the expected types so
+        # one odd response never 500s the whole dashboard.
+        try:
+            raw_brands = json.loads(r["brands_mentioned"]) if r["brands_mentioned"] else []
+        except (ValueError, TypeError):
+            raw_brands = []
+        if not isinstance(raw_brands, list):
+            raw_brands = []
+        try:
+            positions = json.loads(r["positions"]) if r["positions"] else {}
+        except (ValueError, TypeError):
+            positions = {}
+        if not isinstance(positions, dict):
+            positions = {}
         try:
             descriptors = json.loads(r["descriptors"]) if r["descriptors"] else {}
         except (ValueError, TypeError):
             descriptors = {}
+        if not isinstance(descriptors, dict):
+            descriptors = {}
         # attribute each descriptor term to the focal brand or to competitors,
         # by canonicalizing the brand key the term was attached to.
-        for raw_b, terms in (descriptors or {}).items():
+        for raw_b, terms in descriptors.items():
             canon_b = resolver.canonicalize(raw_b)
             if not canon_b:
                 continue
             bucket = lex_focal if canon_b.casefold() == focal_cf else lex_comp
-            for t in terms or []:
-                t = (t or "").strip().lower()
+            for t in (terms if isinstance(terms, list) else []):
+                t = (t or "").strip().lower() if isinstance(t, str) else ""
                 if t:
                     bucket[t] = bucket.get(t, 0) + 1
 
