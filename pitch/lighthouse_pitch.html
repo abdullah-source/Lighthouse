@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lighthouse — Pitch</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#fff;--panel:#F8FAFC;--panel2:#F1F5F9;--ink:#0F172A;--muted:#64748B;--faint:#94A3B8;
+    --line:#E2E8F0;--line2:#CBD5E1;--accent:#2563EB;--accent2:#3B82F6;--accent-soft:#EFF4FF;--good:#16A34A;}
+  *{margin:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;font-variant-numeric:tabular-nums}
+  .progress-top{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));z-index:30;transition:width .35s}
+  .brandmark{position:fixed;top:18px;left:26px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;letter-spacing:-.02em;z-index:20}
+  .brandmark .m{width:18px;height:18px;background:var(--accent);
+    -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 3l2.5 5h-5z'/><rect x='9' y='8' width='6' height='13' rx='1'/><rect x='6' y='20' width='12' height='1.6' rx='.8'/></svg>") center/contain no-repeat;
+            mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 3l2.5 5h-5z'/><rect x='9' y='8' width='6' height='13' rx='1'/><rect x='6' y='20' width='12' height='1.6' rx='.8'/></svg>") center/contain no-repeat}
+  .deck{position:relative;height:100vh;width:100vw}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:8vh 9vw;opacity:0;transition:opacity .4s}
+  .slide.active{display:flex;opacity:1}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:18px}
+  h1{font-size:62px;line-height:1.04;font-weight:800;letter-spacing:-.035em}
+  h2{font-size:40px;line-height:1.12;font-weight:800;letter-spacing:-.02em;max-width:20ch}
+  .lead{font-size:20px;color:var(--muted);margin-top:22px;max-width:60ch;line-height:1.5}
+  .chips{display:flex;gap:8px;margin-top:30px;flex-wrap:wrap}
+  .chip{font-size:13px;font-weight:600;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 13px;display:flex;gap:7px;align-items:center}
+  .chip .d{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:30px;max-width:1000px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px}
+  .card h3{font-size:16px;font-weight:700;margin-bottom:8px}.card p{font-size:14.5px;color:var(--muted);line-height:1.5}
+  .card .k{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.08em;margin-bottom:10px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:28px;max-width:1040px}
+  .grid3 .cell{background:#fff;padding:24px}
+  .counter{position:fixed;bottom:20px;right:28px;font-size:13px;color:var(--faint);z-index:20}
+  .dots{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:20}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--line2);cursor:pointer}.dot.active{background:var(--accent)}
+  .hint{position:fixed;bottom:20px;left:28px;font-size:12px;color:var(--faint);z-index:20}
+  .em{color:var(--accent)}
+  .note{margin-top:22px;font-size:14px;color:var(--faint);max-width:62ch;line-height:1.5}
+
+  /* animated product demo */
+  .demo-wrap{display:grid;grid-template-columns:1.05fr 1.25fr;gap:48px;align-items:center}
+  .story h2{font-size:32px}
+  .story .step{display:flex;gap:12px;align-items:flex-start;margin-top:15px;font-size:15px;color:var(--muted);transition:opacity .4s;opacity:.4}
+  .story .step.on{opacity:1;color:var(--ink)}
+  .story .step .n{width:24px;height:24px;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:0 0 auto;color:var(--muted)}
+  .story .step.on .n{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .win{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 60px -30px rgba(15,23,42,.35);overflow:hidden;height:440px;position:relative}
+  .win-bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .win-bar i{width:10px;height:10px;border-radius:50%;background:#E2E8F0;display:inline-block}
+  .win-bar .url{margin-left:10px;font-size:12px;color:var(--faint)}
+  .scene{position:absolute;inset:46px 0 0 0;padding:22px;opacity:0;transition:opacity .45s;pointer-events:none;overflow:hidden}
+  .scene.on{opacity:1}
+  .cmp-title{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:14px}
+  .cmp-box{border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 10px 30px -22px rgba(15,23,42,.3)}
+  .cmp-row{display:flex;align-items:center;gap:8px;font-size:16px}
+  .cmp-b{font-weight:650;color:var(--ink);min-height:22px}
+  .cmp-sep{color:var(--faint);font-size:14px}
+  .cmp-c{color:var(--ink);min-height:22px}
+  .cur{display:inline-block;width:2px;height:18px;background:var(--accent);vertical-align:-3px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .cmp-foot{display:flex;justify-content:flex-end;border-top:1px solid var(--line);margin-top:12px;padding-top:11px}
+  .cmp-run{background:var(--accent);color:#fff;border-radius:8px;padding:9px 16px;font-size:14px;font-weight:600}
+  .cmp-run.pulse{animation:pulse .5s 2}
+  @keyframes pulse{50%{transform:scale(1.06);box-shadow:0 0 0 6px var(--accent-soft)}}
+  .pg{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px}
+  .orbit{position:relative;width:54px;height:54px}
+  .orbit span{position:absolute;inset:0;border:2px solid transparent;border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+  .orbit span:nth-child(2){inset:8px;border-top-color:var(--accent2);animation-duration:1.4s;animation-direction:reverse}
+  .orbit span:nth-child(3){inset:16px;border-top-color:#93C5FD;animation-duration:1.8s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .pg-stage{font-size:17px;font-weight:700}.pg-sub{font-size:13px;color:var(--faint)}
+  .rs-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+  .rs-title{font-weight:800;font-size:17px}.rs-title span{color:var(--muted);font-weight:500;font-size:12.5px;margin-left:6px}
+  .rs-rate{font-size:32px;font-weight:800;color:var(--accent);letter-spacing:-.03em}
+  .models{display:flex;gap:7px;margin-bottom:12px}
+  .mchip{font-size:11px;font-weight:600;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 9px;color:var(--muted)}
+  .brow{display:grid;grid-template-columns:130px 1fr 42px;align-items:center;gap:10px;font-size:13px;margin:6px 0}
+  .brow .nm{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.brow .nm.you{color:var(--accent);font-weight:650}
+  .track{height:8px;background:var(--panel2);border-radius:5px;overflow:hidden}
+  .track>span{display:block;height:100%;width:0;border-radius:5px;background:var(--line2);transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+  .track.you>span{background:var(--accent)}
+  .brow .v{text-align:right;color:var(--muted)}
+  .rev{margin-top:12px;border-top:1px solid var(--line);padding-top:11px;opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s}
+  .rev.on{opacity:1;transform:none}
+  .rev h5{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:7px;font-weight:700}
+  .srcline{display:flex;flex-wrap:wrap;gap:6px}
+  .src{font-size:11.5px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;color:var(--ink)}
+  .vibes{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .vb{font-size:11.5px;color:var(--accent);background:var(--accent-soft);border:1px solid #DBE6FE;border-radius:6px;padding:3px 8px}
+  .act{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .act .ahd{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:7px}
+  .act .ap{font-size:12.5px;color:var(--ink);line-height:1.5}
+  .act .code{margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;background:#0F172A;color:#93C5FD;border-radius:6px;padding:8px;white-space:pre;overflow:hidden}
+  .sim{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px}
+  .sim b{color:var(--accent)}.sim .arr{color:var(--good);font-size:17px}
+  .sim .tag{font-size:10px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="progress-top" id="ptop"></div>
+<div class="brandmark"><span class="m"></span> Lighthouse</div>
+
+<div class="deck" id="deck">
+
+  <section class="slide">
+    <div class="kicker">Pitch</div>
+    <h1>The measurement layer<br>for AI search.</h1>
+    <p class="lead">When people ask AI what to buy or who to hire, Lighthouse shows whether you're recommended, who wins instead, why, and the change that moves it.</p>
+    <div class="chips"><span class="chip"><span class="d"></span>GPT-5</span><span class="chip"><span class="d"></span>Claude</span><span class="chip"><span class="d"></span>Perplexity</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">The shift</div>
+    <h2>Buying decisions now start inside the model.</h2>
+    <p class="lead">Founders ask ChatGPT "who should incorporate my startup." Buyers ask Perplexity "best CRM for a 10-person team." The AI names a few. If you're not named, you're invisible — and there's <span class="em">no Search Console for it.</span></p>
+  </section>
+
+  <!-- DEMO 1: Cooley GO -->
+  <section class="slide">
+    <div class="demo-wrap">
+      <div class="story" data-demo="cooley">
+        <div class="kicker">The user story · legal</div>
+        <h2>A law-firm marketer asks: does AI send founders to us?</h2>
+        <div class="step"><span class="n">1</span><div>Type the brand and category — Cooley GO, in venture-capital law.</div></div>
+        <div class="step"><span class="n">2</span><div>We ask GPT-5, Claude &amp; Perplexity the real questions founders ask.</div></div>
+        <div class="step"><span class="n">3</span><div>See where you stand, who wins, and the sources behind it.</div></div>
+        <div class="step"><span class="n">4</span><div>Get the publish-ready change — and simulate its impact.</div></div>
+      </div>
+      <div class="win" data-demo="cooley"></div>
+    </div>
+  </section>
+
+  <!-- DEMO 2: HubSpot -->
+  <section class="slide">
+    <div class="demo-wrap">
+      <div class="story" data-demo="hubspot">
+        <div class="kicker">The user story · B2B SaaS</div>
+        <h2>Same engine, a software brand: does AI recommend us for CRM?</h2>
+        <div class="step"><span class="n">1</span><div>Type HubSpot, in CRM software. No setup, any category.</div></div>
+        <div class="step"><span class="n">2</span><div>The identical pipeline runs — same cost, different market.</div></div>
+        <div class="step"><span class="n">3</span><div>HubSpot leads at 93%, ahead of Salesforce and Zoho.</div></div>
+        <div class="step"><span class="n">4</span><div>Even a leader sees where it slips, and what reinforces it.</div></div>
+      </div>
+      <div class="win" data-demo="hubspot"></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">What makes it different</div>
+    <h2>Not a leaderboard. The reason behind it.</h2>
+    <div class="two">
+      <div class="card"><div class="k">OFF-SITE PROVENANCE</div><h3>The sources the AI trusts</h3><p>For every answer, the exact pages each engine cited — so you see where you're absent. Cooley GO: 376 citations, led by Reddit, YouTube, Y Combinator.</p></div>
+      <div class="card"><div class="k">VERBAL VIBES</div><h3>How AI describes you</h3><p>The words the AI attaches to you vs competitors, each linked to the sites driving them. Lean into what you already own.</p></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">The edge</div>
+    <h2>A change you can ship — and test before you do.</h2>
+    <div class="two">
+      <div class="card"><div class="k">ACTION</div><h3>Content + schema markup</h3><p>Each gap becomes publish-ready positioning content plus the schema.org JSON-LD that reinforces it for AI crawlers — grounded in the vibes you own and the sources the AI trusts.</p></div>
+      <div class="card"><div class="k">SIMULATION → PROOF</div><h3>See the likely lift first</h3><p>Inject the change and re-probe a sample for an estimate. Then publish, re-crawl, and re-measure the frozen panel to <span class="em">prove the real lift</span>. Proof is the moat.</p></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">Same engine, any market</div>
+    <h2>Legal, SaaS, and any category you type.</h2>
+    <div class="grid3">
+      <div class="cell"><div class="k">PROFESSIONAL SERVICES</div><h3>Cooley GO — 51%</h3><p>leads Wilson Sonsini &amp; Orrick for startup founders.</p></div>
+      <div class="cell"><div class="k">B2B SAAS</div><h3>HubSpot — 93%</h3><p>ahead of Salesforce, Zoho &amp; Pipedrive.</p></div>
+      <div class="cell"><div class="k">ANY CATEGORY</div><h3>Your brand</h3><p>type a brand + category; same pipeline, same cost.</p></div>
+    </div>
+    <p class="note">The engine never depended on a vertical — a law firm, a SaaS tool, a consumer brand all run through the identical measurement pipeline.</p>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">It's real, and it's live</div>
+    <h2>Not a mockup — a deployed product.</h2>
+    <p class="lead">FastAPI + Postgres &amp; pgvector, a RAG layer over every collected answer, and an MCP server so a client's own AI agent can query Lighthouse. Both stories above ran on real data.</p>
+    <div class="chips"><span class="chip">Multi-engine measurement</span><span class="chip">Off-site provenance</span><span class="chip">Verbal vibes</span><span class="chip">RAG Ask</span><span class="chip">Action + schema</span><span class="chip">Simulation</span><span class="chip">MCP</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">Close</div>
+    <h1>Be the answer,<br>not the afterthought.</h1>
+    <p class="lead">Lighthouse measures where you lose in AI search, shows why, and proves what moves it — in any category.</p>
+  </section>
+
+</div>
+
+<div class="counter" id="counter"></div>
+<div class="dots" id="dots"></div>
+<div class="hint">← → to move</div>
+
+<script>
+  const DEMOS = {
+    cooley: { brand:"Cooley GO", cat:"venture capital law",
+      models:[["Claude",73],["GPT-5",45],["Perplexity",35]],
+      rate:51,
+      rows:[["Cooley GO (you)",51,true],["Wilson Sonsini",38,false],["Clerky",37,false],["Orrick",31,false],["Gunderson Dettmer",28,false]],
+      sources:["reddit.com","youtube.com","ycombinator.com","cooleygo.com","linkedin.com"],
+      vibes:["plain-english guides","free document generators","up-to-date"],
+      action:"Position Cooley GO as the most comprehensive free founder resource: incorporation guides, SAFEs, term sheets…",
+      sim:[51,100] },
+    hubspot: { brand:"HubSpot", cat:"CRM software",
+      models:[["Claude",100],["GPT-5",85],["Perplexity",95]],
+      rate:93,
+      rows:[["HubSpot (you)",93,true],["Zoho CRM",78,false],["Salesforce",68,false],["Pipedrive",62,false],["Freshsales",37,false]],
+      sources:["reddit.com","youtube.com","hubspot.com","salesforce.com","monday.com"],
+      vibes:["free tier","scales well","excellent ux"],
+      action:"Lean into the genuinely-free tier and easiest UX for small teams; reinforce the all-in-one suite…",
+      sim:[93,100] },
+  };
+
+  function winHTML(cfg){
+    const models = cfg.models.map(m=>`<span class="mchip">${m[0]} ${m[1]}%</span>`).join("");
+    const rows = cfg.rows.map(r=>`<div class="brow"><span class="nm ${r[2]?"you":""}">${r[0]}</span><div class="track ${r[2]?"you":""}"><span data-w="${r[1]}"></span></div><span class="v">${r[1]}%</span></div>`).join("");
+    const srcs = cfg.sources.map(s=>`<span class="src">${s}</span>`).join("");
+    const vibes = cfg.vibes.map(v=>`<span class="vb">${v}</span>`).join("");
+    return `
+      <div class="win-bar"><i></i><i></i><i></i><span class="url">lighthouse · /app</span></div>
+      <div class="scene sc-composer">
+        <div class="cmp-title">Measure your brand in AI search</div>
+        <div class="cmp-box"><div class="cmp-row"><span class="cmp-b d-brand"></span><span class="cmp-sep">in</span><span class="cmp-c d-cat"></span><span class="cur d-cur"></span></div>
+          <div class="cmp-foot"><span class="cmp-run d-run">Run audit</span></div></div>
+      </div>
+      <div class="scene sc-progress"><div class="pg"><div class="orbit"><span></span><span></span><span></span></div>
+        <div class="pg-stage d-stage">Generating buyer questions</div><div class="pg-sub">120 questions across 3 engines</div></div></div>
+      <div class="scene sc-results">
+        <div class="rs-head"><div class="rs-title">${cfg.brand}<span>${cfg.cat} · 120 responses</span></div><div class="rs-rate"><span class="d-rate">0</span>%</div></div>
+        <div class="models">${models}</div>
+        ${rows}
+        <div class="rev d-why"><h5>The why — sources the AI cites</h5><div class="srcline">${srcs}</div><div class="vibes">${vibes}</div></div>
+        <div class="rev d-act"><div class="act"><div class="ahd">Action — publish-ready change</div>
+          <div class="ap">${cfg.action}</div>
+          <div class="code">{ "@type": "FAQPage", "mainEntity": [ … ] }</div>
+          <div class="sim">Simulated impact: <b>${cfg.sim[0]}%</b> <span class="arr">→</span> <b>${cfg.sim[1]}%</b> <span class="tag">estimate, not proof</span></div></div></div>
+      </div>`;
+  }
+  // fill both demo windows
+  document.querySelectorAll('.win[data-demo]').forEach(w=>{ w.innerHTML = winHTML(DEMOS[w.dataset.demo]); });
+
+  const slides=[...document.querySelectorAll('.slide')];
+  const dotsWrap=document.getElementById('dots'), ptop=document.getElementById('ptop'), counter=document.getElementById('counter');
+  let i=0, token=0;
+  slides.forEach((_,idx)=>{const d=document.createElement('div');d.className='dot'+(idx===0?' active':'');d.onclick=()=>go(idx);dotsWrap.appendChild(d);});
+  const dots=[...document.querySelectorAll('.dot')];
+
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  async function type(el,t,sp){el.textContent='';for(const c of t){el.textContent+=c;await sleep(sp);}}
+  function countUp(el,to,ms){const t0=performance.now();(function f(t){const p=Math.min(1,(t-t0)/ms);el.textContent=Math.round(p*to);if(p<1)requestAnimationFrame(f);})(performance.now());}
+
+  async function runDemo(win, story, cfg, tk){
+    const q=s=>win.querySelector(s);
+    const scenes=['.sc-composer','.sc-progress','.sc-results'];
+    const setScene=n=>scenes.forEach(s=>win.querySelector(s).classList.toggle('on',s===n));
+    const steps=[...story.querySelectorAll('.step')];
+    // reset
+    setScene('.sc-composer'); q('.d-brand').textContent='';q('.d-cat').textContent='';
+    q('.d-cur').style.display='inline-block';q('.d-run').classList.remove('pulse');
+    q('.d-rate').textContent='0';q('.d-why').classList.remove('on');q('.d-act').classList.remove('on');
+    win.querySelectorAll('.track>span').forEach(s=>s.style.width='0');
+    steps.forEach(s=>s.classList.remove('on'));
+    await sleep(500); if(tk!==token)return;
+    steps[0].classList.add('on');
+    await type(q('.d-brand'),cfg.brand,55); if(tk!==token)return;
+    await sleep(180); await type(q('.d-cat'),cfg.cat,42); if(tk!==token)return;
+    await sleep(380); q('.d-cur').style.display='none'; q('.d-run').classList.add('pulse');
+    await sleep(900); if(tk!==token)return;
+    steps[1].classList.add('on'); setScene('.sc-progress');
+    for(const s of['Generating buyer questions','Asking GPT-5, Claude & Perplexity','Reading what each AI said']){q('.d-stage').textContent=s;await sleep(950);if(tk!==token)return;}
+    steps[2].classList.add('on'); setScene('.sc-results');
+    countUp(q('.d-rate'),cfg.rate,1100);
+    await sleep(60); win.querySelectorAll('.track>span').forEach(s=>s.style.width=s.dataset.w+'%');
+    await sleep(2400); if(tk!==token)return;
+    q('.d-why').classList.add('on'); await sleep(2600); if(tk!==token)return;
+    steps[3].classList.add('on'); q('.d-act').classList.add('on'); await sleep(3600); if(tk!==token)return;
+    setTimeout(()=>runDemo(win,story,cfg,tk),900);
+  }
+  function restartActiveDemo(){
+    token++;
+    const active=slides[i];
+    const win=active.querySelector('.win[data-demo]');
+    const story=active.querySelector('.story[data-demo]');
+    if(win&&story) runDemo(win,story,DEMOS[win.dataset.demo],token);
+  }
+
+  function go(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,idx)=>s.classList.toggle('active',idx===i));
+    dots.forEach((d,idx)=>d.classList.toggle('active',idx===i));
+    ptop.style.width=(i/(slides.length-1)*100)+'%';
+    counter.textContent=(i+1)+' / '+slides.length;
+    restartActiveDemo();
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(i+1);}
+    if(e.key==='ArrowLeft'){e.preventDefault();go(i-1);}
+  });
+  document.getElementById('deck').onclick=e=>{const x=e.clientX/innerWidth;go(x<0.32?i-1:i+1);};
+  go(0);
+</script>
+</body>
+</html>
