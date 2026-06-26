@@ -29,7 +29,7 @@ from pydantic import BaseModel
 
 import rag
 import store
-from action import generate_action_plan
+from action import generate_action_plan, simulate_impact
 from audit import run_audit
 from config import CLERK_ENABLED, CLERK_PUBLISHABLE_KEY, require_api_keys
 
@@ -162,6 +162,32 @@ def generate(req: GenerateRequest) -> dict:
     plan["target_query"] = query
     plan["competitor"] = req.competitor
     return plan
+
+
+class SimulateRequest(BaseModel):
+    brand_id: int
+    content: str
+
+
+@app.post("/api/simulate")
+def simulate(req: SimulateRequest) -> dict:
+    """Estimate the impact of a proposed change: inject the content and re-probe a
+    sample of the brand's panel queries. An estimate, not causal proof."""
+    row = store.get_brand(req.brand_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="brand not found")
+    queries = store.get_queries_sample(req.brand_id, 6)
+    if not queries:
+        raise HTTPException(status_code=400, detail="no panel queries to simulate against")
+    baseline = (store.aggregate_brand(req.brand_id) or {}).get("mention_rate", 0)
+    sim = simulate_impact(row["name"], row["category"], req.content, queries)
+    return {
+        "baseline_rate": baseline,
+        "simulated_rate": sim["simulated_rate"],
+        "n": sim["n"],
+        "note": "Estimate: the content is injected as trusted facts and a sample is re-asked; "
+                "not a live re-crawl of the real engines.",
+    }
 
 
 # --- static assets (mounted last so it doesn't shadow routes above) ---------

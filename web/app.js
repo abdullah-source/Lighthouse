@@ -23,6 +23,32 @@ function escapeHtml(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+// Minimal, safe markdown -> HTML (escape first, then format) so answers render
+// like a proper chat reply instead of raw asterisks and hashes.
+function mdToHtml(src) {
+  const lines = escapeHtml(src || "").split(/\r?\n/);
+  const inline = (t) => t
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+  let html = "", list = null;
+  const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    let m;
+    if (/^#{1,6}\s/.test(line)) { closeList(); html += `<h4 class="md-h">${inline(line.replace(/^#{1,6}\s/, ""))}</h4>`; }
+    else if ((m = line.match(/^\s*[-*]\s+(.*)/))) { if (list !== "ul") { closeList(); html += "<ul>"; list = "ul"; } html += `<li>${inline(m[1])}</li>`; }
+    else if ((m = line.match(/^\s*\d+\.\s+(.*)/))) { if (list !== "ol") { closeList(); html += "<ol>"; list = "ol"; } html += `<li>${inline(m[1])}</li>`; }
+    else if (line.trim() === "") { closeList(); }
+    else { closeList(); html += `<p>${inline(line)}</p>`; }
+  }
+  closeList();
+  return html;
+}
+
+// per-brand caches so switching tabs doesn't wipe an answer or a generated fix
+const askCache = {};     // brand_id -> { q, html }
+const actionCache = {};  // brand_id -> { competitor -> plan }
+
 // --- view toggle ------------------------------------------------------------
 
 function showComposer() {
@@ -270,10 +296,63 @@ function renderAction() {
     catch { note.textContent = "Select and copy manually."; note.className = "push-note show ok"; }
   };
 
+  // render a generated plan into a card's output area
+  function renderPlan(out, p) {
+    const notes = (p.verify_notes || []).length
+      ? `<div class="verify"><b>Verify before publishing:</b><ul>${p.verify_notes.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></div>` : "";
+    out.classList.add("show");
+    out.innerHTML = `
+      ${p.angle ? `<div class="angle"><b>Angle:</b> ${escapeHtml(p.angle)}</div>` : ""}
+      <div class="act-block">
+        <div class="act-hd"><span>Positioning content</span><span class="copy-slot" data-k="content"></span></div>
+        <div class="act-body md">${mdToHtml(p.positioning_md || "")}</div>
+      </div>
+      <div class="act-block">
+        <div class="act-hd"><span>Schema markup (JSON-LD)</span><span class="copy-slot" data-k="schema"></span></div>
+        <pre class="act-code">${escapeHtml(p.schema_jsonld || "")}</pre>
+      </div>
+      ${notes}
+      <div class="sim-slot"></div>
+      <div class="push-note"></div>`;
+    const note = out.querySelector(".push-note");
+    const cSlot = out.querySelector('.copy-slot[data-k="content"]');
+    const sSlot = out.querySelector('.copy-slot[data-k="schema"]');
+    cSlot.innerHTML = copyBtn("Copy content"); sSlot.innerHTML = copyBtn("Copy schema");
+    wireCopy(cSlot.querySelector(".copy"), () => p.positioning_md || "", note);
+    wireCopy(sSlot.querySelector(".copy"), () => p.schema_jsonld || "", note);
+    wireSimulate(out.querySelector(".sim-slot"), p.positioning_md || "");
+  }
+
+  // "Simulate impact" — inject the proposed content and re-probe a sample
+  function wireSimulate(slot, content) {
+    slot.innerHTML = `<button class="btn btn-ghost btn-sm sim-btn">Simulate impact</button><div class="sim-out"></div>`;
+    const so = slot.querySelector(".sim-out");
+    slot.querySelector(".sim-btn").onclick = async (e) => {
+      const b = e.currentTarget; b.disabled = true; b.textContent = "Simulating…";
+      so.innerHTML = `<div class="loading"><span class="spin"></span> Re-probing a sample with the proposed content…</div>`;
+      try {
+        const r = await api("/api/simulate", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ brand_id: d.brand_id, content }) });
+        const arrow = r.simulated_rate >= r.baseline_rate ? "↑" : "↓";
+        so.innerHTML = `<div class="sim-card">
+          <div class="sim-hd">Simulated impact <span class="ask-tag">estimate, not proof</span></div>
+          <div class="sim-nums"><span>Now: <b>${pct(r.baseline_rate)}</b></span>
+            <span class="sim-arrow">${arrow}</span>
+            <span>With the change: <b class="accent">${pct(r.simulated_rate)}</b></span></div>
+          <div class="muted" style="font-size:12.5px">Re-probed ${r.n} of your panel queries with this content injected. ${escapeHtml(r.note || "")}</div></div>`;
+      } catch (err) { so.innerHTML = `<div class="err-box">Could not simulate: ${escapeHtml(err.message)}</div>`; }
+      finally { b.disabled = false; b.textContent = "Simulate impact"; }
+    };
+  }
+
   $("#tabbody").querySelectorAll(".rec").forEach((card) => {
     const out = card.querySelector(".gen-out");
+    const comp = card.dataset.comp;
+    const cached = (actionCache[d.brand_id] || {})[comp];
+    if (cached) renderPlan(out, cached);   // restore across tab switches
     card.querySelector(".gen").onclick = async (e) => {
-      const btn = e.currentTarget; const comp = btn.dataset.comp;
+      const btn = e.currentTarget;
       btn.disabled = true; btn.textContent = "Generating…";
       out.classList.add("show");
       out.innerHTML = `<div class="loading"><span class="spin"></span> Writing positioning content + schema markup…</div>`;
@@ -282,26 +361,8 @@ function renderAction() {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ brand_id: d.brand_id, competitor: comp }),
         });
-        const notes = (p.verify_notes || []).length
-          ? `<div class="verify"><b>Verify before publishing:</b><ul>${p.verify_notes.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></div>` : "";
-        out.innerHTML = `
-          ${p.angle ? `<div class="angle"><b>Angle:</b> ${escapeHtml(p.angle)}</div>` : ""}
-          <div class="act-block">
-            <div class="act-hd"><span>Positioning content</span><span class="copy-slot" data-k="content"></span></div>
-            <div class="act-body">${escapeHtml(p.positioning_md || "").replace(/\n/g, "<br>")}</div>
-          </div>
-          <div class="act-block">
-            <div class="act-hd"><span>Schema markup (JSON-LD)</span><span class="copy-slot" data-k="schema"></span></div>
-            <pre class="act-code">${escapeHtml(p.schema_jsonld || "")}</pre>
-          </div>
-          ${notes}
-          <div class="push-note"></div>`;
-        const note = out.querySelector(".push-note");
-        const cSlot = out.querySelector('.copy-slot[data-k="content"]');
-        const sSlot = out.querySelector('.copy-slot[data-k="schema"]');
-        cSlot.innerHTML = copyBtn("Copy content"); sSlot.innerHTML = copyBtn("Copy schema");
-        wireCopy(cSlot.querySelector(".copy"), () => p.positioning_md || "", note);
-        wireCopy(sSlot.querySelector(".copy"), () => p.schema_jsonld || "", note);
+        (actionCache[d.brand_id] = actionCache[d.brand_id] || {})[comp] = p;
+        renderPlan(out, p);
       } catch (err) {
         out.innerHTML = `<div class="err-box">Could not generate: ${escapeHtml(err.message)}</div>`;
       } finally { btn.disabled = false; btn.textContent = "Generate the change"; }
@@ -311,11 +372,12 @@ function renderAction() {
 
 function renderAsk() {
   const d = currentData;
+  const cached = askCache[d.brand_id];
   $("#tabbody").innerHTML = `
     <p class="muted" style="margin:-4px 0 16px">Ask anything about ${escapeHtml(d.name)}. Answers use this brand's collected AI data when available, otherwise general knowledge.</p>
-    <div class="ask-box"><input id="ask-q" type="text" placeholder="e.g. why do buyers pick competitors? what should we change?" autocomplete="off" />
+    <div class="ask-box"><input id="ask-q" type="text" placeholder="e.g. why do buyers pick competitors? what should we change?" autocomplete="off" value="${cached ? escapeHtml(cached.q) : ""}" />
       <button id="ask-btn" class="btn btn-primary btn-sm">Ask</button></div>
-    <div id="ask-out"></div>`;
+    <div id="ask-out">${cached ? cached.html : ""}</div>`;
   const out = $("#ask-out");
   const run = async () => {
     const q = $("#ask-q").value.trim(); if (!q) return;
@@ -329,8 +391,10 @@ function renderAsk() {
         ? `<span class="ask-tag ok">grounded in your data</span>`
         : `<span class="ask-tag">general answer</span>`;
       const sources = (res.sources || []).map((s) => `<div class="ask-src">${escapeHtml(s)}</div>`).join("");
-      out.innerHTML = `<div class="card ask-answer">${tag}${escapeHtml(res.answer).replace(/\n/g, "<br>")}</div>
+      const html = `<div class="card ask-answer">${tag}<div class="md">${mdToHtml(res.answer)}</div></div>
         ${sources ? `<div class="ask-srcs"><h4>Grounded on</h4>${sources}</div>` : ""}`;
+      out.innerHTML = html;
+      askCache[d.brand_id] = { q, html };   // persist across tab switches
     } catch (err) { out.innerHTML = `<div class="err-box">Could not answer: ${escapeHtml(err.message)}</div>`; }
     finally { btn.disabled = false; btn.textContent = "Ask"; }
   };

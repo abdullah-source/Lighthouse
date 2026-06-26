@@ -71,6 +71,16 @@ def delete_brand(brand_id: int) -> None:
         conn.execute("DELETE FROM brands WHERE id=%s", (brand_id,))
 
 
+def get_queries_sample(brand_id: int, n: int = 6) -> list[str]:
+    """A sample of the brand's frozen panel queries (for the action simulation)."""
+    with v0.get_conn() as conn:
+        rows = conn.execute(
+            "SELECT query_text FROM queries WHERE brand_id = %s ORDER BY id LIMIT %s",
+            (brand_id, n),
+        ).fetchall()
+    return [r["query_text"] for r in rows]
+
+
 def get_sample_query(brand_id: int) -> str | None:
     """A representative buyer query for the brand, used to seed action artifacts."""
     with v0.get_conn() as conn:
@@ -413,6 +423,14 @@ def aggregate_brand(brand_id: int) -> dict:
     focal = resolver.canonicalize(brand["name"])
     focal_cf = focal.casefold()  # compare on a case-insensitive key, not display
 
+    def is_focal_family(b_cf: str) -> bool:
+        # Treat a parent/sub-brand as the focal brand: "Cooley GO" and "Cooley"
+        # are the same family (word-boundary prefix either direction), so the
+        # parent isn't counted as a competitor against its own sub-brand.
+        return (b_cf == focal_cf
+                or focal_cf.startswith(b_cf + " ")
+                or b_cf.startswith(focal_cf + " "))
+
     total = len(rows)
     raw_variants: set[str] = set()
     canon_brands: set[str] = set()
@@ -475,7 +493,7 @@ def aggregate_brand(brand_id: int) -> dict:
             canon_b = resolver.canonicalize(raw_b)
             if not canon_b:
                 continue
-            is_focal = canon_b.casefold() == focal_cf
+            is_focal = is_focal_family(canon_b.casefold())
             bucket = lex_focal if is_focal else lex_comp
             for t in (terms if isinstance(terms, list) else []):
                 t = (t or "").strip().lower() if isinstance(t, str) else ""
@@ -510,15 +528,15 @@ def aggregate_brand(brand_id: int) -> dict:
         canon_brands |= present
         total_canon_mentions += len(present)
 
-        if focal_cf in {p.casefold() for p in present}:
+        if any(is_focal_family(p.casefold()) for p in present):
             focal_hits += 1
             model_focal[model] = model_focal.get(model, 0) + 1
-            fpos = [canon_to_pos[k] for k in canon_to_pos if k.casefold() == focal_cf]
+            fpos = [canon_to_pos[k] for k in canon_to_pos if is_focal_family(k.casefold())]
             if fpos:
                 focal_positions.append(min(fpos))
 
         for b in present:
-            if b.casefold() == focal_cf:
+            if is_focal_family(b.casefold()):
                 continue
             comp_hits[b] = comp_hits.get(b, 0) + 1
             if b in canon_to_pos:

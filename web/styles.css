@@ -204,6 +204,18 @@ a{color:inherit}
 .act-code{padding:14px;margin:0;font-size:12px;line-height:1.5;color:var(--ink);background:#0F172A;color:#E2E8F0;overflow-x:auto;white-space:pre;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .verify{margin-top:14px;font-size:13px;color:var(--muted)}
 .verify ul{margin:6px 0 0 18px}.verify li{margin:3px 0}
+/* markdown rendering (Ask answers, positioning content) */
+.md p{margin:0 0 10px}.md p:last-child{margin-bottom:0}
+.md h4.md-h{font-size:14px;font-weight:700;margin:14px 0 6px;letter-spacing:-.01em;text-transform:none;color:var(--ink)}
+.md ul,.md ol{margin:6px 0 10px 20px}.md li{margin:3px 0}
+.md code{background:var(--panel2);border-radius:4px;padding:1px 5px;font-size:12.5px;font-family:ui-monospace,Menlo,monospace}
+.md b{font-weight:700}
+/* simulation */
+.sim-slot{margin-top:14px}
+.sim-card{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--card2)}
+.sim-hd{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sim-nums{display:flex;align-items:center;gap:14px;font-size:15px;margin-bottom:8px}
+.sim-arrow{font-size:20px;color:var(--accent)}
 .err-box{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:12px;padding:16px;font-size:14px;line-height:1.5}
 .loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;padding:20px 0}
 .cl-hidden{display:none}

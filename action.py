@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from anthropic import Anthropic
 
-from config import ANTHROPIC_API_KEY, MODEL_ACTION
+from config import ANTHROPIC_API_KEY, MODEL_ACTION, MODEL_PROBE_ANTHROPIC
 
 _SYSTEM = (
     "You are a GEO content strategist. You write publish-ready content that helps "
@@ -161,3 +161,48 @@ def generate_action_plan(
                 "verify_notes": d.get("verify_notes") or [],
             }
     raise RuntimeError("action plan generation did not return a tool call")
+
+
+# --- Simulation: estimate the impact of a proposed change -------------------
+#
+# Honest "artificial environment" run: we can't make the real engines re-crawl
+# instantly, so we inject the proposed content as KNOWN facts and re-ask a
+# sample of the brand's own panel queries, measuring how often the brand now
+# gets recommended. It is an ESTIMATE (an upper-ish bound where the AI already
+# trusts the content), not causal proof — the UI labels it as such.
+
+_SIM_SYSTEM = (
+    "You are a recommendation assistant. The user asks what to choose in a category. "
+    "Recommend specific brands, products, companies, or firms by name, briefly. "
+    "Treat any provided brand context as established, trusted facts."
+)
+
+
+def simulate_impact(brand: str, category: str, content: str, queries: list[str]) -> dict:
+    """
+    Re-ask each query with the proposed content injected, and count how often the
+    brand is recommended. Returns {"simulated_rate", "n"}.
+    """
+    client = Anthropic(api_key=ANTHROPIC_API_KEY)
+    bcf = brand.casefold()
+    hits = 0
+    n = 0
+    for q in queries:
+        user = (
+            f"Category: {category}\n"
+            f"Known, trusted context about {brand}:\n{content}\n\n"
+            f"User question: {q}\n\n"
+            f"Recommend the best options by name."
+        )
+        try:
+            resp = client.messages.create(
+                model=MODEL_PROBE_ANTHROPIC, max_tokens=400,
+                system=_SIM_SYSTEM, messages=[{"role": "user", "content": user}],
+            )
+            text = resp.content[0].text if resp.content else ""
+        except Exception:
+            continue
+        n += 1
+        if bcf in (text or "").casefold():
+            hits += 1
+    return {"simulated_rate": round(hits / n, 3) if n else 0.0, "n": n}
