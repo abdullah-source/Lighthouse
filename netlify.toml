@@ -1,0 +1,4 @@
+# Netlify serves the static Lighthouse pitch deck (no build step).
+[build]
+  publish = "netlify-pitch"
+  command = ""
