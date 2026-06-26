@@ -173,6 +173,9 @@ a{color:inherit}
 .vibe-pills{display:flex;flex-wrap:wrap;gap:8px}
 .vibe-pill{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--ink)}
 .vibe-pill .vc{font-size:11px;color:var(--faint)}
+.vibe-pills.col{flex-direction:column;align-items:stretch;gap:6px}
+.vibe-pills.col .vibe-pill{justify-content:flex-start}
+.vibe-src{font-size:11px;color:var(--faint);margin-left:auto}
 .vibe-own{border-color:#BBF7D0;background:#F0FDF4}.vibe-own h4{color:var(--good)}
 .vibe-own .vibe-pill{border-color:#BBF7D0;background:#fff}.vibe-own .vibe-pill .vc{color:var(--good)}
 /* ask */
@@ -193,6 +196,14 @@ a{color:inherit}
 .gen-out.show{display:block}
 .push-note{margin-top:10px;font-size:12.5px;display:none}.push-note.show{display:block}
 .push-note.ok{color:var(--good)}.push-note.warn{color:#B45309}
+/* action plan blocks */
+.angle{font-size:14px;color:var(--ink);background:var(--accent-soft);border:1px solid #DBE6FE;border-radius:10px;padding:10px 14px;margin-top:14px}
+.act-block{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.act-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 13px;background:var(--card2);border-bottom:1px solid var(--line);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.act-body{padding:14px;font-size:14px;line-height:1.6;color:var(--ink)}
+.act-code{padding:14px;margin:0;font-size:12px;line-height:1.5;color:var(--ink);background:#0F172A;color:#E2E8F0;overflow-x:auto;white-space:pre;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.verify{margin-top:14px;font-size:13px;color:var(--muted)}
+.verify ul{margin:6px 0 0 18px}.verify li{margin:3px 0}
 .err-box{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:12px;padding:16px;font-size:14px;line-height:1.5}
 .loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;padding:20px 0}
 .cl-hidden{display:none}

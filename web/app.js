@@ -233,15 +233,19 @@ function renderVibes() {
         return `<span class="vibe" style="font-size:${size}px;opacity:${op}" title="${x.count} mentions">${escapeHtml(x.term)}</span>`;
       }).join("")
     : `<div class="bi-cat">No descriptors captured yet for ${escapeHtml(d.name)}.</div>`;
-  const ownChips = (arr) => (arr && arr.length)
-    ? arr.map((x) => `<span class="vibe-pill">${escapeHtml(x.term)}<span class="vc">${x.count}</span></span>`).join("")
+  const ownChips = (arr, withSrc) => (arr && arr.length)
+    ? arr.map((x) => {
+        const src = withSrc && x.sources && x.sources.length
+          ? `<span class="vibe-src">${x.sources.map(escapeHtml).join(" · ")}</span>` : "";
+        return `<span class="vibe-pill">${escapeHtml(x.term)}<span class="vc">${x.count}</span>${src}</span>`;
+      }).join("")
     : `<div class="bi-cat">Nothing distinctive yet.</div>`;
   $("#tabbody").innerHTML = `
-    <p class="muted" style="margin:-4px 0 16px">The words AI assistants use to describe ${escapeHtml(d.name)} and rivals. Lean into the vibes you already own.</p>
+    <p class="muted" style="margin:-4px 0 16px">The words AI assistants use to describe ${escapeHtml(d.name)} and rivals, and the source sites that drive them. Lean into the vibes you already own.</p>
     <div class="card"><h4>How AI describes ${escapeHtml(d.name)}</h4><div class="vibe-cloud">${cloud}</div></div>
     <div class="cards2">
-      <div class="card vibe-own"><h4>Vibes you own</h4><div class="vibe-pills">${ownChips(lex.you_own)}</div></div>
-      <div class="card vibe-them"><h4>Vibes competitors own</h4><div class="vibe-pills">${ownChips(lex.they_own)}</div></div>
+      <div class="card vibe-own"><h4>Vibes you own <span class="muted" style="text-transform:none;font-weight:400">· with the sites driving them</span></h4><div class="vibe-pills col">${ownChips(lex.you_own, true)}</div></div>
+      <div class="card vibe-them"><h4>Vibes competitors own</h4><div class="vibe-pills">${ownChips(lex.they_own, false)}</div></div>
     </div>`;
 }
 
@@ -252,34 +256,55 @@ function renderAction() {
     <div class="rec" data-comp="${escapeHtml(c.brand)}">
       <div class="rec-top"><span class="who">${escapeHtml(c.brand)} is winning here</span>
         <span class="meta muted">${pct(c.rate)} of answers</span></div>
-      <p>${escapeHtml(c.brand)} is recommended in ${pct(c.rate)} of responses while ${escapeHtml(d.focal_canonical)} sits at ${pct(d.mention_rate)}. Generate a publish-ready fix that targets this gap.</p>
-      <div class="rec-actions"><button class="btn btn-primary btn-sm gen" data-comp="${escapeHtml(c.brand)}">Generate fix</button>
-        <button class="btn btn-ghost btn-sm push">Copy the fix</button></div>
-      <div class="gen-out"></div><div class="push-note"></div>
+      <p>${escapeHtml(c.brand)} is recommended in ${pct(c.rate)} of responses while ${escapeHtml(d.focal_canonical)} sits at ${pct(d.mention_rate)}. Generate the website change that targets this gap.</p>
+      <div class="rec-actions"><button class="btn btn-primary btn-sm gen" data-comp="${escapeHtml(c.brand)}">Generate the change</button></div>
+      <div class="gen-out"></div>
     </div>`).join("");
   $("#tabbody").innerHTML = `
-    <p class="muted" style="margin:-4px 0 16px">Turn each gap into a publish-ready change, grounded in the AI's own answers.</p>
+    <p class="muted" style="margin:-4px 0 16px">Turn each gap into an actual website change: publish-ready positioning content <b>plus</b> the schema.org markup that reinforces it for AI crawlers, grounded in the vibes you own and the sources the AI trusts.</p>
     ${cards || '<div class="card">Run an audit with competitors to see action recommendations.</div>'}`;
+
+  const copyBtn = (label) => `<button class="btn btn-ghost btn-sm copy">${label}</button>`;
+  const wireCopy = (el, getText, note) => el.onclick = async () => {
+    try { await navigator.clipboard.writeText(getText()); note.textContent = "Copied."; note.className = "push-note show ok"; }
+    catch { note.textContent = "Select and copy manually."; note.className = "push-note show ok"; }
+  };
+
   $("#tabbody").querySelectorAll(".rec").forEach((card) => {
     const out = card.querySelector(".gen-out");
     card.querySelector(".gen").onclick = async (e) => {
       const btn = e.currentTarget; const comp = btn.dataset.comp;
       btn.disabled = true; btn.textContent = "Generating…";
+      out.classList.add("show");
+      out.innerHTML = `<div class="loading"><span class="spin"></span> Writing positioning content + schema markup…</div>`;
       try {
-        const art = await api("/api/recommendations/generate", {
+        const p = await api("/api/recommendations/generate", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ brand_id: d.brand_id, competitor: comp }),
         });
-        out.textContent = art.body || "(no content)"; out.classList.add("show");
-      } catch (err) { out.textContent = "Could not generate: " + err.message; out.classList.add("show"); }
-      finally { btn.disabled = false; btn.textContent = "Generate fix"; }
-    };
-    const note = card.querySelector(".push-note");
-    card.querySelector(".push").onclick = async () => {
-      const text = out.textContent.trim();
-      if (!out.classList.contains("show") || !text) { note.textContent = "Generate the fix first."; note.className = "push-note show warn"; return; }
-      try { await navigator.clipboard.writeText(text); note.textContent = "Copied. Paste into your CMS to publish."; note.className = "push-note show ok"; }
-      catch { note.textContent = "Select the text above to copy."; note.className = "push-note show ok"; }
+        const notes = (p.verify_notes || []).length
+          ? `<div class="verify"><b>Verify before publishing:</b><ul>${p.verify_notes.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></div>` : "";
+        out.innerHTML = `
+          ${p.angle ? `<div class="angle"><b>Angle:</b> ${escapeHtml(p.angle)}</div>` : ""}
+          <div class="act-block">
+            <div class="act-hd"><span>Positioning content</span><span class="copy-slot" data-k="content"></span></div>
+            <div class="act-body">${escapeHtml(p.positioning_md || "").replace(/\n/g, "<br>")}</div>
+          </div>
+          <div class="act-block">
+            <div class="act-hd"><span>Schema markup (JSON-LD)</span><span class="copy-slot" data-k="schema"></span></div>
+            <pre class="act-code">${escapeHtml(p.schema_jsonld || "")}</pre>
+          </div>
+          ${notes}
+          <div class="push-note"></div>`;
+        const note = out.querySelector(".push-note");
+        const cSlot = out.querySelector('.copy-slot[data-k="content"]');
+        const sSlot = out.querySelector('.copy-slot[data-k="schema"]');
+        cSlot.innerHTML = copyBtn("Copy content"); sSlot.innerHTML = copyBtn("Copy schema");
+        wireCopy(cSlot.querySelector(".copy"), () => p.positioning_md || "", note);
+        wireCopy(sSlot.querySelector(".copy"), () => p.schema_jsonld || "", note);
+      } catch (err) {
+        out.innerHTML = `<div class="err-box">Could not generate: ${escapeHtml(err.message)}</div>`;
+      } finally { btn.disabled = false; btn.textContent = "Generate the change"; }
     };
   });
 }

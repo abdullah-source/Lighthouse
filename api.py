@@ -29,7 +29,7 @@ from pydantic import BaseModel
 
 import rag
 import store
-from action import generate_artifact
+from action import generate_action_plan
 from audit import run_audit
 from config import CLERK_ENABLED, CLERK_PUBLISHABLE_KEY, require_api_keys
 
@@ -150,15 +150,18 @@ def generate(req: GenerateRequest) -> dict:
     if row is None:
         raise HTTPException(status_code=404, detail="brand not found")
     query = (req.query or "").strip() or store.get_sample_query(req.brand_id) or f"best {row['category']}"
-    artifact = generate_artifact(
-        brand=row["name"],
-        category=row["category"],
-        query=query,
-        competitor=req.competitor,
+    # Ground the action plan in the audit: the vibes the brand owns + the sources
+    # the AI trusts. So content + schema target what actually drives recommendations.
+    agg = store.aggregate_brand(req.brand_id)
+    owned = [x["term"] for x in (agg.get("lexical") or {}).get("you_own", [])][:8]
+    sources = [s["domain"] for s in (agg.get("provenance") or {}).get("top_sources", [])][:6]
+    plan = generate_action_plan(
+        brand=row["name"], category=row["category"], query=query,
+        competitor=req.competitor, owned_vibes=owned, target_sources=sources,
     )
-    artifact["target_query"] = query
-    artifact["competitor"] = req.competitor
-    return artifact
+    plan["target_query"] = query
+    plan["competitor"] = req.competitor
+    return plan
 
 
 # --- static assets (mounted last so it doesn't shadow routes above) ---------

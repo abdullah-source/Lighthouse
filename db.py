@@ -277,7 +277,8 @@ def fetch_citations_for_brand(conn, brand_id: int):
 def fetch_parsed_for_brand(conn, brand_id: int):
     return conn.execute(
         """
-        SELECT r.id AS response_id, r.model, p.brands_mentioned, p.positions, p.descriptors
+        SELECT r.id AS response_id, r.model, r.citations,
+               p.brands_mentioned, p.positions, p.descriptors
         FROM parsed_responses p
         JOIN responses r ON r.id = p.response_id
         JOIN queries q ON q.id = r.query_id

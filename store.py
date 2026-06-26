@@ -90,6 +90,18 @@ def get_brand(brand_id: int) -> dict | None:
         ).fetchone()
 
 
+def find_brand_by_name(name: str) -> int | None:
+    """Latest completed brand whose name matches (case-insensitive). For the MCP
+    server, where agents reference a brand by name, not id."""
+    with v0.get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM brands WHERE lower(name) = lower(%s) "
+            "ORDER BY (status = 'done') DESC, id DESC LIMIT 1",
+            (name,),
+        ).fetchone()
+    return row["id"] if row else None
+
+
 def list_brands() -> list[dict]:
     """
     All audited brands, newest first, with the denormalized headline metric.
@@ -339,19 +351,27 @@ def _build_provenance(rows: list) -> dict:
 
 # --- Lexical environment (the "verbal vibes") -------------------------------
 
-def _build_lexical(lex_focal: dict[str, int], lex_comp: dict[str, int]) -> dict:
+def _build_lexical(lex_focal: dict[str, int], lex_comp: dict[str, int],
+                   lex_focal_sources: dict[str, dict[str, int]] | None = None) -> dict:
     """
     Turn raw term counts into the 'verbal vibes' payload:
-    - focal_top: how AI describes YOU (ranked terms)
+    - focal_top: how AI describes YOU (ranked terms), each with the source sites
+      that drive it
     - you_own:   vibes where you lead competitors (the lean-in action)
     - they_own:  vibes competitors own that you don't
     """
+    lex_focal_sources = lex_focal_sources or {}
+
+    def sources_for(term: str) -> list[str]:
+        d = lex_focal_sources.get(term, {})
+        return [dom for dom, _ in sorted(d.items(), key=lambda kv: kv[1], reverse=True)[:3]]
+
     def ranked(d: dict[str, int], n: int = 18) -> list[dict]:
-        return [{"term": t, "count": c}
+        return [{"term": t, "count": c, "sources": sources_for(t)}
                 for t, c in sorted(d.items(), key=lambda kv: kv[1], reverse=True)[:n]]
 
     you_own = [
-        {"term": t, "count": c, "lead": c - lex_comp.get(t, 0)}
+        {"term": t, "count": c, "lead": c - lex_comp.get(t, 0), "sources": sources_for(t)}
         for t, c in lex_focal.items() if c >= lex_comp.get(t, 0)
     ]
     you_own.sort(key=lambda x: (x["lead"], x["count"]), reverse=True)
@@ -410,6 +430,8 @@ def aggregate_brand(brand_id: int) -> dict:
     # lexical environment ("verbal vibes"): canonical brand -> {term: count}
     lex_focal: dict[str, int] = {}
     lex_comp: dict[str, int] = {}
+    # which cited source domains co-occur with each focal vibe term
+    lex_focal_sources: dict[str, dict[str, int]] = {}
 
     for r in rows:
         model = r["model"]
@@ -436,17 +458,35 @@ def aggregate_brand(brand_id: int) -> dict:
             descriptors = {}
         if not isinstance(descriptors, dict):
             descriptors = {}
+        # this response's cited source domains (retrieval engines only)
+        try:
+            resp_cites = json.loads(r["citations"]) if r["citations"] else []
+        except (ValueError, TypeError):
+            resp_cites = []
+        resp_domains = []
+        for c in (resp_cites if isinstance(resp_cites, list) else []):
+            url = c.get("url") if isinstance(c, dict) else (c if isinstance(c, str) else None)
+            dom = _domain(url) if url else ""
+            if dom:
+                resp_domains.append(dom)
         # attribute each descriptor term to the focal brand or to competitors,
         # by canonicalizing the brand key the term was attached to.
         for raw_b, terms in descriptors.items():
             canon_b = resolver.canonicalize(raw_b)
             if not canon_b:
                 continue
-            bucket = lex_focal if canon_b.casefold() == focal_cf else lex_comp
+            is_focal = canon_b.casefold() == focal_cf
+            bucket = lex_focal if is_focal else lex_comp
             for t in (terms if isinstance(terms, list) else []):
                 t = (t or "").strip().lower() if isinstance(t, str) else ""
-                if t:
-                    bucket[t] = bucket.get(t, 0) + 1
+                if not t:
+                    continue
+                bucket[t] = bucket.get(t, 0) + 1
+                # record which sources drive each focal vibe term
+                if is_focal and resp_domains:
+                    src = lex_focal_sources.setdefault(t, {})
+                    for dom in resp_domains:
+                        src[dom] = src.get(dom, 0) + 1
 
         # canonicalize this response's mentions
         canon_to_pos: dict[str, int] = {}
@@ -556,7 +596,7 @@ def aggregate_brand(brand_id: int) -> dict:
         },
         "provenance": _build_provenance(citation_rows),
         "panel": get_active_panel(brand_id),
-        "lexical": _build_lexical(lex_focal, lex_comp),
+        "lexical": _build_lexical(lex_focal, lex_comp, lex_focal_sources),
         "key_competitor": key_competitor,
     }
 
