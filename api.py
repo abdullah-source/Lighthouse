@@ -27,6 +27,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+import gtm
 import rag
 import store
 from action import generate_action_plan, simulate_impact
@@ -54,6 +55,11 @@ def landing() -> FileResponse:
 @app.get("/app")
 def product() -> FileResponse:
     return FileResponse(WEB_DIR / "app.html")
+
+
+@app.get("/gtm")
+def gtm_studio() -> FileResponse:
+    return FileResponse(WEB_DIR / "gtm.html")
 
 
 @app.get("/api/config")
@@ -162,6 +168,30 @@ def generate(req: GenerateRequest) -> dict:
     plan["target_query"] = query
     plan["competitor"] = req.competitor
     return plan
+
+
+class GtmPlanRequest(BaseModel):
+    idea: str
+
+
+class GtmLandingRequest(BaseModel):
+    idea: str
+    plan: dict
+
+
+@app.post("/api/gtm/plan")
+def gtm_plan(req: GtmPlanRequest) -> dict:
+    """Strategist agent: a founder's idea -> a structured GTM plan."""
+    idea = (req.idea or "").strip()
+    if not idea:
+        raise HTTPException(status_code=400, detail="describe your startup first")
+    return {"plan": gtm.generate_gtm_plan(idea)}
+
+
+@app.post("/api/gtm/landing")
+def gtm_landing(req: GtmLandingRequest) -> dict:
+    """Designer agent: idea + plan -> a self-contained landing page (HTML)."""
+    return {"html": gtm.generate_landing_html(req.idea, req.plan)}
 
 
 class SimulateRequest(BaseModel):
