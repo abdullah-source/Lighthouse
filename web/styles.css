@@ -263,6 +263,22 @@ a{color:inherit}
 .run-for{font-size:13px;color:var(--faint)}
 .run-cancel{margin-top:8px}
 
+/* procedural progress: real steps + live counts + bar */
+.run-bar{width:100%;max-width:460px;height:7px;border-radius:99px;background:var(--line);overflow:hidden}
+.run-bar > i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s cubic-bezier(.4,0,.2,1)}
+.run-pct{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;margin-top:-6px}
+.run-steps{width:100%;max-width:460px;display:flex;flex-direction:column;gap:2px;text-align:left;margin-top:6px}
+.run-step{display:flex;align-items:flex-start;gap:11px;padding:10px 12px;border-radius:11px;transition:background .3s}
+.run-step.active{background:var(--accent-soft,#F5F8FF)}
+.run-step .ic{flex:0 0 20px;width:20px;height:20px;border-radius:50%;border:2px solid var(--line2);margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;transition:all .3s}
+.run-step.active .ic{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+.run-step.done .ic{background:var(--good,#16A34A);border-color:var(--good,#16A34A)}
+.run-step.done .ic::after{content:"✓"}
+.run-step .tx{flex:1}
+.run-step .tt{font-size:14px;font-weight:600;color:var(--faint)}
+.run-step.active .tt,.run-step.done .tt{color:var(--ink)}
+.run-step .sub{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:2px;min-height:0}
+
 /* results panel (centered, single column) */
 .panel{padding:28px 0 64px}
 

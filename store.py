@@ -52,6 +52,33 @@ def set_status(brand_id: int, status: str, error: str | None = None) -> None:
         )
 
 
+def get_progress(brand_id: int) -> dict:
+    """Live progress for an in-flight audit: how many panel queries exist, how
+    many model answers have been collected so far, and how many are parsed.
+    Powers the procedural waiting animation (real numbers, not a fake spinner)."""
+    from config import OPENAI_API_KEY, PERPLEXITY_API_KEY
+    engines = 1 + (1 if OPENAI_API_KEY else 0) + (1 if PERPLEXITY_API_KEY else 0)
+    with v0.get_conn() as conn:
+        queries = conn.execute(
+            "SELECT COUNT(*) AS n FROM queries WHERE brand_id=%s", (brand_id,)
+        ).fetchone()["n"]
+        responses = conn.execute(
+            "SELECT COUNT(*) AS n FROM responses r JOIN queries q ON q.id=r.query_id "
+            "WHERE q.brand_id=%s", (brand_id,)
+        ).fetchone()["n"]
+        parsed = conn.execute(
+            "SELECT COUNT(*) AS n FROM parsed_responses p JOIN responses r ON r.id=p.response_id "
+            "JOIN queries q ON q.id=r.query_id WHERE q.brand_id=%s", (brand_id,)
+        ).fetchone()["n"]
+    return {
+        "queries": queries,
+        "engines": engines,
+        "responses": responses,
+        "responses_total": queries * engines,
+        "parsed": parsed,
+    }
+
+
 def delete_brand(brand_id: int) -> None:
     """Remove a brand and all its rows (used by cancel). FK-safe order. Deleting
     a mid-run brand also kills its background audit: subsequent writes hit a

@@ -91,7 +91,11 @@ _DESIGNER_SYSTEM = (
     "Include: a nav with the product name, a hero (headline from the one-liner + subhead + a "
     "primary CTA button), a 3-up value section from the message pillars, a short 'how it works' "
     "or social-proof strip, and a closing CTA + footer. Use real copy from the plan, not lorem "
-    "ipsum. Return ONLY the HTML document, starting with <!DOCTYPE html>. No commentary, no code fences."
+    "ipsum. "
+    "CRITICAL: the document MUST be COMPLETE and valid, ending with </html>. Keep the CSS "
+    "concise (a tight <style> block, not exhaustive) so you never run out of room before the "
+    "body. Finishing the whole page matters more than elaborate styling. "
+    "Return ONLY the HTML document, starting with <!DOCTYPE html>. No commentary, no code fences."
 )
 
 
@@ -104,7 +108,7 @@ def generate_landing_html(idea: str, plan: dict) -> str:
         f"Message pillars: {', '.join(plan.get('messaging_pillars', []))}\n"
     )
     resp = client.messages.create(
-        model=MODEL_ACTION, max_tokens=4000, system=_DESIGNER_SYSTEM,
+        model=MODEL_ACTION, max_tokens=8000, system=_DESIGNER_SYSTEM,
         messages=[{"role": "user", "content": f"Startup idea:\n{idea.strip()[:2000]}\n\nGTM plan:\n{plan_brief}\n\nDesign the landing page."}],
     )
     html = resp.content[0].text if resp.content else ""
@@ -112,4 +116,10 @@ def generate_landing_html(idea: str, plan: dict) -> str:
     html = re.sub(r"^```html\s*|\s*```$", "", html.strip())
     if "<!DOCTYPE" in html:
         html = html[html.index("<!DOCTYPE"):]
+    # Guard: if the model still got cut off before closing the document, make it
+    # valid so the iframe renders what we have rather than a blank page.
+    if "</html>" not in html:
+        if "</body>" not in html:
+            html += "\n</body>"
+        html += "\n</html>"
     return html

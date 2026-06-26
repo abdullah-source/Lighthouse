@@ -56,10 +56,14 @@ def _probe_parse_finalize(brand_id: int) -> None:
         ).fetchall()
         pairs = [(r["id"], r["query_text"]) for r in qrows]
     if pairs:
-        probe_results = asyncio.run(probe_all(pairs))
+        # Persist + commit each answer as it arrives so /status can report a live
+        # count (responses collected so far) instead of a frozen spinner.
         with v0.get_conn() as conn:
-            for query_id, model, raw_text, citations in probe_results:
+            def _save(result) -> None:
+                query_id, model, raw_text, citations = result
                 v0.insert_response(conn, query_id, model, raw_text, citations)
+                conn.commit()
+            asyncio.run(probe_all(pairs, on_result=_save))
 
     # 3. Parse each unparsed response into structured mentions (async fan-out).
     store.set_status(brand_id, "parsing")

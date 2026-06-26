@@ -155,7 +155,7 @@ async def _probe_perplexity(
         return text, _extract_citations(data)
 
 
-async def probe_all(queries: list[tuple[int, str]]) -> list[tuple[int, str, str, list]]:
+async def probe_all(queries: list[tuple[int, str]], on_result=None) -> list[tuple[int, str, str, list]]:
     """
     Probe every (query_id, query_text) against the available models.
 
@@ -213,8 +213,20 @@ async def probe_all(queries: list[tuple[int, str]]) -> list[tuple[int, str, str,
                 )
 
         # asyncio.gather schedules all tasks. The semaphore ensures only
-        # PROBE_CONCURRENCY are in-flight at any moment.
-        results = await asyncio.gather(*tasks)
+        # PROBE_CONCURRENCY are in-flight at any moment. When a caller passes
+        # on_result, drain via as_completed so it can persist each answer the
+        # moment it lands — that powers the live progress count in the UI.
+        if on_result is not None:
+            results = []
+            for fut in asyncio.as_completed(tasks):
+                r = await fut
+                results.append(r)
+                try:
+                    on_result(r)
+                except Exception as exc:  # a progress write must never kill the run
+                    print(f"[probe] on_result hook failed: {exc}")
+        else:
+            results = await asyncio.gather(*tasks)
     finally:
         if px_client is not None:
             await px_client.aclose()

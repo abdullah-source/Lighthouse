@@ -106,18 +106,20 @@ async function refreshPanel() {
     return;
   }
   if (data.status && data.status !== "done") {
-    renderProgress(data.status, data.name);
+    renderProgress(data.status, data.name, data.progress);
     clearInterval(pollTimer);
-    pollTimer = setInterval(async () => {
+    const tick = async () => {
       const s = await api(`/api/brands/${activeId}/status`).catch(() => null);
       if (!s) return;
       if (s.status === "done" || s.status === "error") {
         clearInterval(pollTimer); clearInterval(phraseTimer);
         await loadRecent(); await refreshPanel();
       } else {
-        updateStage(s.status);
+        updateProgress(s.status, s.progress);
       }
-    }, 2500);
+    };
+    tick();                                  // fill real counts immediately
+    pollTimer = setInterval(tick, 2000);
     return;
   }
   clearInterval(phraseTimer);
@@ -128,37 +130,73 @@ async function refreshPanel() {
 // --- lively progress --------------------------------------------------------
 
 const STAGE_TEXT = {
-  pending: "Starting up",
-  generating: "Generating real buyer questions",
-  probing: "Asking GPT-5, Claude & Perplexity",
-  parsing: "Reading what each AI said",
+  pending: "Spinning up your audit",
+  generating: "Designing your question panel",
+  probing: "Interrogating the AI engines",
+  parsing: "Reading the answers",
 };
-const PHRASES = [
-  "Triangulating across models…", "Cross-referencing cited sources…",
-  "Computing share of voice…", "Mapping the competitor set…",
-  "Distilling the verbal vibes…", "Normalizing brand names…",
+// The real pipeline, as ordered steps. `key` maps to the backend status that
+// makes this step "active"; everything before it is "done".
+const STEPS = [
+  { key: "generating", tt: "Build a panel of real buyer questions",
+    sub: p => p && p.queries ? `${p.queries} questions generated` : "" },
+  { key: "probing",    tt: "Ask GPT-5, Claude & Perplexity",
+    sub: p => p ? `${p.responses || 0} / ${p.responses_total || 0} answers collected` : "" },
+  { key: "parsing",    tt: "Read every answer for brand mentions",
+    sub: p => p ? `${p.parsed || 0} / ${p.responses || 0} answers analyzed` : "" },
+  { key: "finishing",  tt: "Map cited sources & score the vibes",
+    sub: () => "" },
 ];
+const STAGE_ORDER = { pending: 0, generating: 0, probing: 1, parsing: 2, finishing: 3 };
 
-function renderProgress(status, name) {
+function pctFor(status, p) {
+  if (!p) return status === "generating" ? 6 : 2;
+  if (status === "probing")
+    return 8 + Math.round((p.responses_total ? (p.responses || 0) / p.responses_total : 0) * 62);
+  if (status === "parsing")
+    return 72 + Math.round((p.responses ? (p.parsed || 0) / p.responses : 0) * 24);
+  if (status === "generating") return 6;
+  return 2;
+}
+
+function renderProgress(status, name, progress) {
+  const steps = STEPS.map((s, i) =>
+    `<div class="run-step" id="rs-${i}"><span class="ic"></span>
+       <div class="tx"><div class="tt">${s.tt}</div><div class="sub" id="rsub-${i}"></div></div></div>`
+  ).join("");
   panel.innerHTML = `
     <div class="run-card">
       <div class="run-orbit"><span></span><span></span><span></span></div>
       <div class="run-stage" id="run-stage">${escapeHtml(STAGE_TEXT[status] || "Working")}</div>
-      <div class="run-phrase" id="run-phrase">${PHRASES[0]}</div>
       <div class="run-for">${name ? "for " + escapeHtml(name) : ""}</div>
+      <div class="run-bar"><i id="run-fill"></i></div>
+      <div class="run-pct" id="run-pct"></div>
+      <div class="run-steps">${steps}</div>
       <button class="btn btn-ghost btn-sm run-cancel" id="cancel-btn">Cancel</button>
     </div>`;
   $("#cancel-btn").onclick = cancelActive;
   clearInterval(phraseTimer);
-  let i = 0;
-  phraseTimer = setInterval(() => {
-    i = (i + 1) % PHRASES.length;
-    const p = $("#run-phrase"); if (p) p.textContent = PHRASES[i];
-  }, 2200);
+  updateProgress(status, progress);
 }
-function updateStage(status) {
-  const el = $("#run-stage");
-  if (el) el.textContent = STAGE_TEXT[status] || "Working";
+
+function updateProgress(status, progress) {
+  const stage = $("#run-stage"); if (stage) stage.textContent = STAGE_TEXT[status] || "Working";
+  const cur = STAGE_ORDER[status] != null ? STAGE_ORDER[status] : 0;
+  STEPS.forEach((s, i) => {
+    const el = $(`#rs-${i}`), sub = $(`#rsub-${i}`);
+    if (!el) return;
+    el.className = "run-step" + (i < cur ? " done" : i === cur ? " active" : "");
+    if (sub) {
+      const txt = i < cur ? (s.sub(progress) || "Done")
+                : i === cur ? s.sub(progress)
+                : "";
+      sub.textContent = txt;
+    }
+  });
+  const fill = $("#run-fill"), pe = $("#run-pct");
+  const v = pctFor(status, progress);
+  if (fill) fill.style.width = v + "%";
+  if (pe) pe.textContent = v >= 2 ? v + "%" : "";
 }
 async function cancelActive() {
   if (activeId == null) return;

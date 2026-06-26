@@ -135,7 +135,16 @@ def get_status(brand_id: int) -> dict:
     row = store.get_brand(brand_id)
     if row is None:
         raise HTTPException(status_code=404, detail="brand not found")
-    return {"brand_id": brand_id, "status": row["status"] or "done", "error_message": row["error_message"]}
+    status = row["status"] or "done"
+    out = {"brand_id": brand_id, "status": status, "error_message": row["error_message"]}
+    # Attach live counts while the run is in flight so the UI can show the real
+    # procedure (panel size, answers collected, answers parsed) as it happens.
+    if status in ("pending", "generating", "probing", "parsing"):
+        try:
+            out["progress"] = store.get_progress(brand_id)
+        except Exception:
+            pass
+    return out
 
 
 @app.post("/api/brands/{brand_id}/ask")
