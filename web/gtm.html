@@ -58,6 +58,9 @@
   @keyframes sp{to{transform:rotate(360deg)}}
   .err{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:12px;padding:16px;font-size:14px}
   .oneliner{text-align:center;font-size:22px;font-weight:700;letter-spacing:-.02em;margin:10px auto 0;max-width:760px}
+  .measure-cta{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff,var(--accent-soft))}
+  .measure-cta .mc-tx{font-size:14px;color:var(--muted);max-width:640px;line-height:1.5}
+  .measure-cta b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -117,10 +120,31 @@
       if(!lr.ok) throw new Error((await lr.json().catch(()=>({}))).detail||"landing failed");
       const {html}=await lr.json();
       $("#ag-design").className="agent done"; renderLanding(html);
+      renderMeasureCTA(plan);
     }catch(err){
       out.insertAdjacentHTML("beforeend",`<div class="err">Could not build: ${esc(err.message)}</div>`);
     }finally{ btn.disabled=false; btn.textContent="Build my GTM →"; }
   });
+
+  // Cold-start funnel: close the loop into the measurement product. A brand-new
+  // startup has no AI presence yet, so we measure the CATEGORY (who AI recommends
+  // and why) as the honest baseline, then they re-measure as they publish.
+  function renderMeasureCTA(plan){
+    const wrap=document.createElement("div"); wrap.className="measure-cta";
+    wrap.innerHTML=`<div class="mc-tx"><b>Now measure it.</b> See who AI recommends in <b>${esc(plan.category||"your category")}</b> today, the sources it cites, and where you can break in. Re-run as you publish to track real movement.</div>
+      <button class="btn" id="measure-btn">Measure in AI search →</button>`;
+    out.appendChild(wrap);
+    $("#measure-btn").onclick=async ev=>{
+      const b=ev.currentTarget; b.disabled=true; b.textContent="Starting baseline audit…";
+      try{
+        const r=await fetch("/api/audits",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({brand:plan.name,category:plan.category||"",context:plan.value_prop||""})});
+        if(!r.ok) throw new Error((await r.json().catch(()=>({}))).detail||"could not start");
+        const {brand_id}=await r.json();
+        window.location.href="/app?brand="+brand_id;
+      }catch(err){ b.disabled=false; b.textContent="Measure in AI search →"; alert("Could not start audit: "+err.message); }
+    };
+  }
 
   function renderPlan(p){
     const pillars=(p.messaging_pillars||[]).map(x=>`<span class="pill">${esc(x)}</span>`).join("");

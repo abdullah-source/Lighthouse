@@ -29,6 +29,7 @@ _PLAN_TOOL = {
         "type": "object",
         "properties": {
             "name": {"type": "string", "description": "A short, plausible product name if none is given."},
+            "category": {"type": "string", "description": "The product category to measure AI visibility in, e.g. 'CRM software', 'running shoes', 'immigration law'."},
             "one_liner": {"type": "string", "description": "One sentence: what it is and for whom."},
             "icp": {"type": "string", "description": "The narrowest beachhead customer to start with."},
             "problem": {"type": "string", "description": "The acute problem, in the customer's words."},
@@ -54,7 +55,7 @@ _PLAN_TOOL = {
             "first_campaign": {"type": "string", "description": "A specific first campaign to run in week one."},
             "north_star": {"type": "string", "description": "The one metric to watch early."},
         },
-        "required": ["name", "one_liner", "icp", "problem", "value_prop", "wedge",
+        "required": ["name", "category", "one_liner", "icp", "problem", "value_prop", "wedge",
                      "messaging_pillars", "channels", "first_campaign", "north_star"],
     },
 }
@@ -68,13 +69,25 @@ _STRATEGIST_SYSTEM = (
 )
 
 
-def generate_gtm_plan(idea: str) -> dict:
-    """Strategist agent: idea -> structured GTM plan."""
+def generate_gtm_plan(idea: str, evidence: str | None = None) -> dict:
+    """Strategist agent: idea -> structured GTM plan.
+
+    When `evidence` is supplied (the real audit of how AI answers this category —
+    who wins, the sources cited, the language owned), the strategist must ground
+    the plan in it instead of inventing a generic plan."""
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
+    user = f"Founder's idea:\n{idea.strip()[:4000]}"
+    if evidence:
+        user += (
+            "\n\nMARKET EVIDENCE — how AI assistants actually answer this category "
+            "right now (measured, not assumed). Ground the plan in this: target the "
+            "sources AI cites, win the language competitors own, and attack the gaps.\n"
+            f"{evidence.strip()[:3000]}"
+        )
     resp = client.messages.create(
         model=MODEL_ACTION, max_tokens=1600, system=_STRATEGIST_SYSTEM,
         tools=[_PLAN_TOOL], tool_choice={"type": "tool", "name": "gtm_plan"},
-        messages=[{"role": "user", "content": f"Founder's idea:\n{idea.strip()[:4000]}"}],
+        messages=[{"role": "user", "content": user}],
     )
     for block in resp.content:
         if block.type == "tool_use" and block.name == "gtm_plan":
@@ -99,7 +112,7 @@ _DESIGNER_SYSTEM = (
 )
 
 
-def generate_landing_html(idea: str, plan: dict) -> str:
+def generate_landing_html(idea: str, plan: dict, evidence: str | None = None) -> str:
     """Designer agent: idea + plan -> a self-contained landing page (HTML string)."""
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
     plan_brief = (
@@ -107,9 +120,13 @@ def generate_landing_html(idea: str, plan: dict) -> str:
         f"ICP: {plan.get('icp')}\nValue prop: {plan.get('value_prop')}\n"
         f"Message pillars: {', '.join(plan.get('messaging_pillars', []))}\n"
     )
+    evidence_block = (
+        f"\n\nUse the language AI assistants reward in this category (from a real audit): "
+        f"{evidence.strip()[:1500]}" if evidence else ""
+    )
     resp = client.messages.create(
         model=MODEL_ACTION, max_tokens=8000, system=_DESIGNER_SYSTEM,
-        messages=[{"role": "user", "content": f"Startup idea:\n{idea.strip()[:2000]}\n\nGTM plan:\n{plan_brief}\n\nDesign the landing page."}],
+        messages=[{"role": "user", "content": f"Startup idea:\n{idea.strip()[:2000]}\n\nGTM plan:\n{plan_brief}{evidence_block}\n\nDesign the landing page."}],
     )
     html = resp.content[0].text if resp.content else ""
     # strip any stray code fences just in case

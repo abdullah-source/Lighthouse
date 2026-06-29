@@ -48,6 +48,7 @@ function mdToHtml(src) {
 // per-brand caches so switching tabs doesn't wipe an answer or a generated fix
 const askCache = {};     // brand_id -> { q, html }
 const actionCache = {};  // brand_id -> { competitor -> plan }
+const buildCache = {};   // brand_id -> { mode -> build result } (landing / gtm)
 
 // --- view toggle ------------------------------------------------------------
 
@@ -316,17 +317,44 @@ function renderVibes() {
 function renderAction() {
   const d = currentData;
   const comps = (d.competitors || []).slice(0, 4);
-  const cards = comps.map((c) => `
+  const lex = d.lexical || {};
+  const srcs = ((d.provenance || {}).top_sources || []).slice(0, 6);
+  const theyOwn = (lex.they_own || []).slice(0, 8);
+
+  // 1) Honest gap diagnosis — drawn straight from the real audit, no projection.
+  const gapSrc = srcs.length
+    ? `<div class="gap-row"><span class="gap-k">Sources AI cites here</span><div class="gap-tags">${srcs.map(s => `<span class="gap-tag">${escapeHtml(s.domain)}</span>`).join("")}</div></div>` : "";
+  const gapVibe = theyOwn.length
+    ? `<div class="gap-row"><span class="gap-k">Language rivals own, you don't</span><div class="gap-tags">${theyOwn.map(t => `<span class="gap-tag warn">${escapeHtml(t.term)}</span>`).join("")}</div></div>` : "";
+  const gapComp = comps.length
+    ? `<div class="gap-row"><span class="gap-k">Who AI recommends instead</span><div class="gap-tags">${comps.map(c => `<span class="gap-tag">${escapeHtml(c.brand)} · ${pct(c.rate)}</span>`).join("")}</div></div>` : "";
+  const gap = (gapSrc || gapVibe || gapComp)
+    ? `<div class="gap-card"><div class="gap-hd">Where you're losing — measured</div>${gapComp}${gapSrc}${gapVibe}</div>` : "";
+
+  const compCards = comps.map((c) => `
     <div class="rec" data-comp="${escapeHtml(c.brand)}">
       <div class="rec-top"><span class="who">${escapeHtml(c.brand)} is winning here</span>
         <span class="meta muted">${pct(c.rate)} of answers</span></div>
       <p>${escapeHtml(c.brand)} is recommended in ${pct(c.rate)} of responses while ${escapeHtml(d.focal_canonical)} sits at ${pct(d.mention_rate)}. Generate the website change that targets this gap.</p>
-      <div class="rec-actions"><button class="btn btn-primary btn-sm gen" data-comp="${escapeHtml(c.brand)}">Generate the change</button></div>
+      <div class="rec-actions"><button class="btn btn-primary btn-sm gen" data-comp="${escapeHtml(c.brand)}">Generate positioning + schema</button></div>
       <div class="gen-out"></div>
     </div>`).join("");
+
   $("#tabbody").innerHTML = `
-    <p class="muted" style="margin:-4px 0 16px">Turn each gap into an actual website change: publish-ready positioning content <b>plus</b> the schema.org markup that reinforces it for AI crawlers, grounded in the vibes you own and the sources the AI trusts.</p>
-    ${cards || '<div class="card">Run an audit with competitors to see action recommendations.</div>'}`;
+    <p class="muted" style="margin:-4px 0 16px">Build the fix from the evidence: every asset below is grounded in the sources AI cites and the language it rewards in <b>your</b> category. Ship it, then re-run the audit to see the real movement.</p>
+    ${gap}
+    <div class="build-card">
+      <div class="build-hd">Build a full asset</div>
+      <p class="muted" style="font-size:13px;margin:2px 0 12px">Two agents work from your audit: a strategist shapes the play, a designer ships the page.</p>
+      <div class="build-btns">
+        <button class="btn btn-primary btn-sm build" data-mode="landing">Generate a landing page</button>
+        <button class="btn btn-ghost btn-sm build" data-mode="gtm">Build a GTM strategy</button>
+      </div>
+      <div class="build-out" id="build-out"></div>
+    </div>
+    <div class="sec-sub">Per-competitor change</div>
+    ${compCards || '<div class="card">Run an audit with competitors to see per-competitor changes.</div>'}
+    <div class="remeasure">Shipped a change? <b>Re-run this audit in 2–3 weeks</b> to measure the real movement in mention rate and share of voice. That before/after is the proof — not a projection.</div>`;
 
   const copyBtn = (label) => `<button class="btn btn-ghost btn-sm copy">${label}</button>`;
   const wireCopy = (el, getText, note) => el.onclick = async () => {
@@ -334,7 +362,7 @@ function renderAction() {
     catch { note.textContent = "Select and copy manually."; note.className = "push-note show ok"; }
   };
 
-  // render a generated plan into a card's output area
+  // render a positioning+schema plan into a competitor card's output area
   function renderPlan(out, p) {
     const notes = (p.verify_notes || []).length
       ? `<div class="verify"><b>Verify before publishing:</b><ul>${p.verify_notes.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></div>` : "";
@@ -350,7 +378,6 @@ function renderAction() {
         <pre class="act-code">${escapeHtml(p.schema_jsonld || "")}</pre>
       </div>
       ${notes}
-      <div class="sim-slot"></div>
       <div class="push-note"></div>`;
     const note = out.querySelector(".push-note");
     const cSlot = out.querySelector('.copy-slot[data-k="content"]');
@@ -358,31 +385,61 @@ function renderAction() {
     cSlot.innerHTML = copyBtn("Copy content"); sSlot.innerHTML = copyBtn("Copy schema");
     wireCopy(cSlot.querySelector(".copy"), () => p.positioning_md || "", note);
     wireCopy(sSlot.querySelector(".copy"), () => p.schema_jsonld || "", note);
-    wireSimulate(out.querySelector(".sim-slot"), p.positioning_md || "");
   }
 
-  // "Simulate impact" — inject the proposed content and re-probe a sample
-  function wireSimulate(slot, content) {
-    slot.innerHTML = `<button class="btn btn-ghost btn-sm sim-btn">Simulate impact</button><div class="sim-out"></div>`;
-    const so = slot.querySelector(".sim-out");
-    slot.querySelector(".sim-btn").onclick = async (e) => {
-      const b = e.currentTarget; b.disabled = true; b.textContent = "Simulating…";
-      so.innerHTML = `<div class="loading"><span class="spin"></span> Re-probing a sample with the proposed content…</div>`;
-      try {
-        const r = await api("/api/simulate", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ brand_id: d.brand_id, content }) });
-        const arrow = r.simulated_rate >= r.baseline_rate ? "↑" : "↓";
-        so.innerHTML = `<div class="sim-card">
-          <div class="sim-hd">Simulated impact <span class="ask-tag">estimate, not proof</span></div>
-          <div class="sim-nums"><span>Now: <b>${pct(r.baseline_rate)}</b></span>
-            <span class="sim-arrow">${arrow}</span>
-            <span>With the change: <b class="accent">${pct(r.simulated_rate)}</b></span></div>
-          <div class="muted" style="font-size:12.5px">Re-probed ${r.n} of your panel queries with this content injected. ${escapeHtml(r.note || "")}</div></div>`;
-      } catch (err) { so.innerHTML = `<div class="err-box">Could not simulate: ${escapeHtml(err.message)}</div>`; }
-      finally { b.disabled = false; b.textContent = "Simulate impact"; }
-    };
+  // render a grounded GTM plan (strategist agent output)
+  function gtmCards(p) {
+    const pillars = (p.messaging_pillars || []).map(x => `<span class="pill">${escapeHtml(x)}</span>`).join("");
+    const chans = (p.channels || []).map(c => `<div class="chan"><b>${escapeHtml(c.name)}</b><div class="why muted">${escapeHtml(c.why)}</div><div class="mv"><span>First move:</span> ${escapeHtml(c.first_move)}</div></div>`).join("");
+    const card = (h, b) => `<div class="gcard"><h4>${h}</h4>${b}</div>`;
+    return `<div class="gone">${escapeHtml(p.one_liner || p.name || "")}</div>
+      <div class="ggrid">
+        ${card("Beachhead ICP", `<p>${escapeHtml(p.icp || "")}</p>`)}
+        ${card("The problem", `<p>${escapeHtml(p.problem || "")}</p>`)}
+        ${card("Value proposition", `<p>${escapeHtml(p.value_prop || "")}</p>`)}
+        ${card("The wedge", `<p>${escapeHtml(p.wedge || "")}</p>`)}
+        ${card("Message pillars", `<div class="pillars">${pillars}</div>`)}
+        ${card("Launch channels", chans)}
+        ${card("Week-one campaign", `<p>${escapeHtml(p.first_campaign || "")}</p>`)}
+        ${card("North-star metric", `<p>${escapeHtml(p.north_star || "")}</p>`)}
+      </div>`;
   }
+
+  // brand-level build: landing page or GTM strategy, grounded in the audit
+  const bout = $("#build-out");
+  function renderBuild(res) {
+    if (res.mode === "gtm") {
+      bout.innerHTML = `<div class="agent-pill done"><span class="dot"></span>Strategist · grounded in your audit</div>${gtmCards(res.plan)}`;
+    } else {
+      const f = document.createElement("iframe"); f.className = "land-frame"; f.title = "Generated landing page";
+      bout.innerHTML = `<div class="agent-pill done"><span class="dot"></span>Strategist + designer · grounded in your audit</div>
+        ${gtmCards(res.plan)}
+        <div class="land-hd">Generated landing page</div><div class="land-wrap"></div>`;
+      bout.querySelector(".land-wrap").appendChild(f);
+      f.srcdoc = res.html;
+    }
+  }
+  const cachedBuild = (buildCache[d.brand_id] || {});
+  $("#tabbody").querySelectorAll(".build").forEach((btn) => {
+    const mode = btn.dataset.mode;
+    if (cachedBuild[mode] && Object.keys(cachedBuild).length) { /* show last build below */ }
+    btn.onclick = async () => {
+      $("#tabbody").querySelectorAll(".build").forEach(b => b.disabled = true);
+      bout.innerHTML = `<div class="agent-pill run"><span class="dot"></span>${mode === "gtm" ? "Strategist is building your play…" : "Strategist + designer are building your page…"}</div><div class="loading"><span class="spin"></span> Working from your audit evidence…</div>`;
+      try {
+        const res = await api(`/api/brands/${d.brand_id}/build`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode }) });
+        (buildCache[d.brand_id] = buildCache[d.brand_id] || {})[mode] = res;
+        renderBuild(res);
+      } catch (err) {
+        bout.innerHTML = `<div class="err-box">Could not build: ${escapeHtml(err.message)}</div>`;
+      } finally { $("#tabbody").querySelectorAll(".build").forEach(b => b.disabled = false); }
+    };
+  });
+  // restore last build across tab switches
+  const lastMode = Object.keys(cachedBuild)[0];
+  if (lastMode) renderBuild(cachedBuild[lastMode]);
 
   $("#tabbody").querySelectorAll(".rec").forEach((card) => {
     const out = card.querySelector(".gen-out");
@@ -403,7 +460,7 @@ function renderAction() {
         renderPlan(out, p);
       } catch (err) {
         out.innerHTML = `<div class="err-box">Could not generate: ${escapeHtml(err.message)}</div>`;
-      } finally { btn.disabled = false; btn.textContent = "Generate the change"; }
+      } finally { btn.disabled = false; btn.textContent = "Generate positioning + schema"; }
     };
   });
 }
@@ -480,4 +537,8 @@ $("#f-file").addEventListener("change", (e) => {
 $("#new-audit").onclick = showComposer;
 window.__newAudit = showComposer;
 
-showComposer();
+// Deep-link from GTM Studio's cold-start funnel: /app?brand=ID lands straight on
+// that brand (its baseline audit will be in flight, so the progress view shows).
+const _bp = new URLSearchParams(location.search).get("brand");
+if (_bp) { showPanel(); selectBrand(Number(_bp)); }
+else showComposer();

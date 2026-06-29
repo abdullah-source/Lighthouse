@@ -203,6 +203,51 @@ def gtm_landing(req: GtmLandingRequest) -> dict:
     return {"html": gtm.generate_landing_html(req.idea, req.plan)}
 
 
+def _audit_evidence(agg: dict) -> str:
+    """Distill a brand's real audit into a compact evidence brief the build
+    agents can ground in: who wins, the sources AI cites, the language owned and
+    the language the brand is missing. All measured, nothing invented."""
+    lines = []
+    comps = [c["brand"] for c in (agg.get("competitors") or [])[:5]]
+    if comps:
+        lines.append("Brands AI recommends in this category: " + ", ".join(comps))
+    srcs = [s["domain"] for s in (agg.get("provenance") or {}).get("top_sources", [])][:6]
+    if srcs:
+        lines.append("Sources AI cites most here: " + ", ".join(srcs))
+    lex = agg.get("lexical") or {}
+    you = [x["term"] for x in lex.get("you_own", [])][:8]
+    they = [x["term"] for x in lex.get("they_own", [])][:8]
+    if you:
+        lines.append("Language AI already associates with you: " + ", ".join(you))
+    if they:
+        lines.append("Language competitors own that you don't: " + ", ".join(they))
+    return "\n".join(lines)
+
+
+class BuildRequest(BaseModel):
+    mode: str  # "landing" | "gtm"
+
+
+@app.post("/api/brands/{brand_id}/build")
+def build_asset(brand_id: int, req: BuildRequest) -> dict:
+    """Action layer: generate a grounded asset for a measured brand. The GTM
+    strategist / landing designer are fed the brand's real audit so the output
+    targets what AI demonstrably rewards in this category, not generic copy."""
+    row = store.get_brand(brand_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="brand not found")
+    agg = store.aggregate_brand(brand_id)
+    evidence = _audit_evidence(agg)
+    idea = f"{row['name']} — a brand in {row['category']}"
+    plan = gtm.generate_gtm_plan(idea, evidence=evidence or None)
+    if req.mode == "gtm":
+        return {"mode": "gtm", "plan": plan, "evidence": evidence}
+    if req.mode == "landing":
+        html = gtm.generate_landing_html(idea, plan, evidence=evidence or None)
+        return {"mode": "landing", "plan": plan, "html": html}
+    raise HTTPException(status_code=400, detail="mode must be 'landing' or 'gtm'")
+
+
 class SimulateRequest(BaseModel):
     brand_id: int
     content: str
