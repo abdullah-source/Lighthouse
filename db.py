@@ -183,13 +183,27 @@ atexit.register(close_pool)
 
 
 def init_db() -> None:
-    """Create the full schema if it doesn't exist. Idempotent."""
+    """Create the full schema if it doesn't exist. Idempotent.
+
+    The app's runtime role is intentionally least-privilege (app_user) and cannot
+    run DDL. If DDL is denied (SQLSTATE 42501) but the schema already exists, we
+    skip silently — schema changes are performed out-of-band by an admin role
+    (postgres). Only raise if the DB is genuinely uninitialized."""
     with get_conn() as conn:
-        conn.execute(SCHEMA)
-        # Add denormalized headline columns to a pre-existing brands table.
-        conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS mention_rate REAL")
-        conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS total_responses INTEGER")
-        conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS key_competitor TEXT")
+        try:
+            conn.execute(SCHEMA)
+            # Add denormalized headline columns to a pre-existing brands table.
+            conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS mention_rate REAL")
+            conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS total_responses INTEGER")
+            conn.execute("ALTER TABLE brands ADD COLUMN IF NOT EXISTS key_competitor TEXT")
+        except Exception as exc:
+            if getattr(exc, "sqlstate", None) != "42501":  # not a permission error
+                raise
+            conn.rollback()
+            row = conn.execute("SELECT to_regclass('public.brands') AS t").fetchone()
+            if not row or not row["t"]:
+                raise  # DB truly uninitialized and we can't create it — real failure
+            print("[db] runtime role lacks DDL; schema already present — skipping migrate")
 
 
 # --- Insert helpers (RETURNING id) ------------------------------------------
