@@ -248,6 +248,18 @@ def build_asset(brand_id: int, req: BuildRequest) -> dict:
     raise HTTPException(status_code=400, detail="mode must be 'landing' or 'gtm'")
 
 
+@app.post("/api/brands/{brand_id}/retrieval")
+def retrieval_reconstruct(brand_id: int) -> dict:
+    """Retrieval-simulation: reconstruct which pages an answer engine would pull
+    for this brand's queries, and score fidelity against the pages it actually
+    cited. The validated cosine core (the 'why' engine, honestly grounded)."""
+    row = store.get_brand(brand_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="brand not found")
+    import retrieval
+    return retrieval.reconstruct_for_brand(brand_id)
+
+
 class SimulateRequest(BaseModel):
     brand_id: int
     content: str

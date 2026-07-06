@@ -129,6 +129,15 @@ CREATE TABLE IF NOT EXISTS context_chunks (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Cache of fetched candidate pages for the retrieval-simulation feature.
+CREATE TABLE IF NOT EXISTS retrieval_cache (
+    url            TEXT PRIMARY KEY,
+    domain         TEXT,
+    text           TEXT,
+    published_date TEXT,
+    fetched_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_queries_brand_id ON queries(brand_id);
 CREATE INDEX IF NOT EXISTS idx_responses_query_id ON responses(query_id);
 CREATE INDEX IF NOT EXISTS idx_parsed_response_id ON parsed_responses(response_id);

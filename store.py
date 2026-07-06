@@ -79,6 +79,67 @@ def get_progress(brand_id: int) -> dict:
     }
 
 
+# --- retrieval-simulation helpers -------------------------------------------
+
+def get_query_citations(brand_id: int) -> dict:
+    """{query_text: [cited_url, ...]} from real engine citations. Dedup, ordered."""
+    with v0.get_conn() as conn:
+        rows = conn.execute(
+            "SELECT q.query_text, r.citations FROM responses r "
+            "JOIN queries q ON q.id=r.query_id "
+            "WHERE q.brand_id=%s AND r.citations IS NOT NULL ORDER BY q.id",
+            (brand_id,),
+        ).fetchall()
+    out: dict[str, list] = {}
+    for r in rows:
+        cites = r["citations"]
+        if isinstance(cites, str):
+            try:
+                cites = json.loads(cites)
+            except Exception:
+                cites = []
+        for u in (cites or []):
+            if isinstance(u, dict):
+                u = u.get("url")
+            if u:
+                out.setdefault(r["query_text"], []).append(str(u).strip())
+    return {q: list(dict.fromkeys(us)) for q, us in out.items()}
+
+
+def get_cached_pages(urls: list) -> dict:
+    """{url: text} from retrieval_cache. Returns {} if the table isn't there yet
+    (the app role can't create it; an admin runs the migration)."""
+    if not urls:
+        return {}
+    try:
+        with v0.get_conn() as conn:
+            rows = conn.execute(
+                "SELECT url, text FROM retrieval_cache WHERE url = ANY(%s)",
+                (list(urls),),
+            ).fetchall()
+        return {r["url"]: r["text"] for r in rows}
+    except Exception:
+        return {}
+
+
+def save_cached_pages(pages: dict) -> None:
+    """Upsert fetched page text. No-op if the cache table is absent."""
+    if not pages:
+        return
+    try:
+        with v0.get_conn() as conn:
+            for url, text in pages.items():
+                conn.execute(
+                    "INSERT INTO retrieval_cache (url, domain, text, fetched_at) "
+                    "VALUES (%s,%s,%s, now()) "
+                    "ON CONFLICT (url) DO UPDATE SET text=EXCLUDED.text, fetched_at=now()",
+                    (url, urlparse(url).netloc, text),
+                )
+            conn.commit()
+    except Exception:
+        pass
+
+
 def delete_brand(brand_id: int) -> None:
     """Remove a brand and all its rows (used by cancel). FK-safe order. Deleting
     a mid-run brand also kills its background audit: subsequent writes hit a
