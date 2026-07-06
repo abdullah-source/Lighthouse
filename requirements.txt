@@ -32,3 +32,7 @@ uvicorn[standard]>=0.29
 # MCP — exposes Lighthouse's data as tools for the customer's own AI agents
 # (Claude Desktop, Cursor). See mcp_server.py.
 mcp>=1.0
+
+# numpy — vector math for the retrieval-simulation feature (retrieval.py):
+# cosine ranking of candidate pages against a query embedding.
+numpy>=1.26
