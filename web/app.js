@@ -49,6 +49,7 @@ function mdToHtml(src) {
 const askCache = {};     // brand_id -> { q, html }
 const actionCache = {};  // brand_id -> { competitor -> plan }
 const buildCache = {};   // brand_id -> { mode -> build result } (landing / gtm)
+const retrievalCache = {}; // brand_id -> retrieval reconstruction result
 
 // --- view toggle ------------------------------------------------------------
 
@@ -227,6 +228,7 @@ function render() {
       <div class="tab ${currentTab === "overview" ? "active" : ""}" data-tab="overview">Overview</div>
       <div class="tab ${currentTab === "vibes" ? "active" : ""}" data-tab="vibes">Vibes</div>
       <div class="tab ${currentTab === "action" ? "active" : ""}" data-tab="action">Action</div>
+      <div class="tab ${currentTab === "retrieval" ? "active" : ""}" data-tab="retrieval">Why you lose</div>
       <div class="tab ${currentTab === "ask" ? "active" : ""}" data-tab="ask">Ask</div>
     </div>
     <div id="tabbody"></div>`;
@@ -235,6 +237,7 @@ function render() {
   if (currentTab === "overview") renderOverview();
   else if (currentTab === "vibes") renderVibes();
   else if (currentTab === "action") renderAction();
+  else if (currentTab === "retrieval") renderRetrieval();
   else renderAsk();
 }
 
@@ -463,6 +466,64 @@ function renderAction() {
       } finally { btn.disabled = false; btn.textContent = "Generate positioning + schema"; }
     };
   });
+}
+
+function renderRetrieval() {
+  const d = currentData;
+  const cached = retrievalCache[d.brand_id];
+  $("#tabbody").innerHTML = `
+    <p class="muted" style="margin:-4px 0 14px">We reconstruct the retrieval step behind the AI's answer — which pages it pulls for your queries — and show where <b>your</b> page ranks vs the ones it actually cites. This is our reconstruction (validated ~7.8x better than chance), not the engine's internal rank.</p>
+    <div class="rx-bar">
+      <input id="rx-site" class="rx-input" type="text" placeholder="Your page URL (e.g. gradewiz.ai)" value="${cached ? escapeHtml(cached._site || "") : ""}" />
+      <button id="rx-go" class="btn btn-primary btn-sm">Reconstruct</button>
+    </div>
+    <div id="rx-out"></div>`;
+  const out = $("#rx-out");
+  const run = async () => {
+    const site = $("#rx-site").value.trim();
+    $("#rx-go").disabled = true;
+    out.innerHTML = `<div class="loading"><span class="spin"></span> Rebuilding the retrieval set and ranking your page…</div>`;
+    try {
+      const r = await api(`/api/brands/${d.brand_id}/retrieval`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ site: site || null }) });
+      r._site = site;
+      retrievalCache[d.brand_id] = r;
+      renderRxResult(out, r);
+    } catch (e) {
+      out.innerHTML = `<div class="err-box">Could not reconstruct: ${escapeHtml(e.message)}</div>`;
+    } finally { const b = $("#rx-go"); if (b) b.disabled = false; }
+  };
+  $("#rx-go").onclick = run;
+  if (cached) renderRxResult(out, cached);
+}
+
+function renderRxResult(out, r) {
+  if (!r.queries || !r.queries.length) {
+    out.innerHTML = `<div class="card">${escapeHtml(r.note || "Nothing to reconstruct yet.")}</div>`;
+    return;
+  }
+  const fid = r.fidelity;
+  const head = `<div class="rx-head">
+    ${r.site ? `<div class="rx-you">Your page ranks <b>#${Math.round(r.your_avg_rank)}</b> on average across these queries</div>` : `<div class="rx-you muted">Add your page URL above to see where you rank.</div>`}
+    ${fid ? `<div class="rx-fid">reconstruction fidelity: <b>${fid.lift ? fid.lift + "×" : "—"}</b> vs chance</div>` : ""}
+  </div>`;
+  const rows = r.queries.map((q) => {
+    const items = q.winners.map((w) => {
+      const cls = w.you ? "rx-item you" : (w.cited ? "rx-item cited" : "rx-item");
+      const tag = w.you ? "YOU" : (w.cited ? "cited" : "");
+      const pct = Math.round(w.score * 100);
+      return `<div class="${cls}">
+        <span class="rx-dom">${escapeHtml(w.domain)}</span>
+        <span class="rx-tag">${tag}</span>
+        <span class="rx-track"><span style="width:${pct}%"></span></span>
+        <span class="rx-sc">${w.score.toFixed(2)}</span></div>`;
+    }).join("");
+    const yourLine = q.your_rank
+      ? `<span class="rx-rank">you: #${q.your_rank}/${q.total_candidates} · ${q.your_score.toFixed(2)}</span>` : "";
+    return `<div class="rx-q"><div class="rx-qh"><span>${escapeHtml(q.query)}</span>${yourLine}</div>${items}</div>`;
+  }).join("");
+  out.innerHTML = head + rows + `<div class="remeasure" style="margin-top:14px">${escapeHtml(r.note || "")}</div>`;
 }
 
 function renderAsk() {

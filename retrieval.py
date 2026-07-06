@@ -77,9 +77,10 @@ def _cos_max(qv: np.ndarray, M: np.ndarray) -> float:
     return float((Mn @ qn).max())
 
 
-def reconstruct_for_brand(brand_id: int, max_queries: int = 5) -> dict:
-    """For up to max_queries of the brand's queries that carry real citations,
-    reconstruct the retrieval ranking and score fidelity against the citations."""
+def reconstruct_for_brand(brand_id: int, site: str | None = None, max_queries: int = 5) -> dict:
+    """Reconstruct the retrieval for the brand's cited queries. If `site` is given,
+    inject the brand's OWN page into the candidate set and report where it ranks vs
+    the pages the engine actually cites — the "here's why you lose" view."""
     gt = store.get_query_citations(brand_id)       # {query_text: [urls]}
     gt = {q: us for q, us in gt.items() if us}
     if not gt:
@@ -90,6 +91,20 @@ def reconstruct_for_brand(brand_id: int, max_queries: int = 5) -> dict:
     pages = _get_pages(corpus)
     if not pages:
         return {"queries": [], "fidelity": None, "note": "Could not fetch candidate pages."}
+
+    # inject the brand's own page (the focal page)
+    focal = None
+    site_note = None
+    if site:
+        s = site.strip()
+        if not s.startswith("http"):
+            s = "https://" + s
+        fp = _get_pages([s])
+        if fp.get(s):
+            focal = s
+            pages[s] = fp[s]
+        else:
+            site_note = f"Could not fetch {s} — it may block crawlers (itself a finding)."
 
     # embed page chunks
     texts, idx = [], []
@@ -102,31 +117,41 @@ def reconstruct_for_brand(brand_id: int, max_queries: int = 5) -> dict:
         vs = [V[i] for i in range(len(idx)) if idx[i] == u]
         if vs:
             page_vecs[u] = np.array(vs)
-    ranked_pool = [u for u in pages if u in page_vecs]
+    pool = [u for u in pages if u in page_vecs]
+    if focal and focal not in page_vecs:
+        focal = None
 
     qvecs = np.array(rag.embed_texts([q for q, _ in items]), dtype=np.float32)
-    p_at_3 = []
-    out_queries = []
+    p_at_3, your_ranks, out_queries = [], [], []
     for (q, cited), qv in zip(items, qvecs):
         cited_set = {u for u in cited if u in page_vecs}
-        scored = sorted(((round(_cos_max(qv, page_vecs[u]), 3), u) for u in ranked_pool),
-                        reverse=True)
-        ranked = [{"url": u, "domain": urlparse(u).netloc, "score": s,
-                   "cited": u in cited_set} for s, u in scored[:8]]
+        scored = sorted(((round(_cos_max(qv, page_vecs[u]), 3), u) for u in pool), reverse=True)
+        ranked_urls = [u for _, u in scored]
+        your_rank = your_score = None
+        if focal:
+            your_rank = ranked_urls.index(focal) + 1
+            your_score = next(s for s, u in scored if u == focal)
+            your_ranks.append(your_rank)
+        winners = [{"url": u, "domain": urlparse(u).netloc, "score": s,
+                    "cited": u in cited_set, "you": u == focal} for s, u in scored[:8]]
         if cited_set:
-            top3 = {r["url"] for r in ranked[:3]}
-            p_at_3.append(len(top3 & cited_set) / 3.0)
-        out_queries.append({"query": q, "n_cited": len(cited_set), "ranked": ranked})
+            p_at_3.append(len({u for u in ranked_urls[:3]} & cited_set) / 3.0)
+        top_score = scored[0][0] if scored else None
+        out_queries.append({
+            "query": q, "n_cited": len(cited_set), "total_candidates": len(pool),
+            "your_rank": your_rank, "your_score": your_score,
+            "top_score": top_score, "winners": winners,
+        })
 
     fidelity = None
     if p_at_3:
-        rand = np.mean([q["n_cited"] for q in out_queries]) / max(1, len(ranked_pool))
+        rand = np.mean([q["n_cited"] for q in out_queries]) / max(1, len(pool))
         ours = float(np.mean(p_at_3))
-        fidelity = {"precision_at_3": round(ours, 3),
-                    "random_baseline": round(float(rand), 3),
-                    "lift": round(ours / rand, 1) if rand else None,
-                    "corpus_pages": len(ranked_pool)}
-    return {"queries": out_queries, "fidelity": fidelity,
-            "method": "cosine",
-            "note": "Reconstructed retrieval (cosine core). Fidelity = how well our "
-                    "ranking predicts the pages the engine actually cited."}
+        fidelity = {"precision_at_3": round(ours, 3), "random_baseline": round(float(rand), 3),
+                    "lift": round(ours / rand, 1) if rand else None, "corpus_pages": len(pool)}
+    return {
+        "queries": out_queries, "fidelity": fidelity, "method": "cosine",
+        "site": focal, "your_avg_rank": round(float(np.mean(your_ranks)), 1) if your_ranks else None,
+        "note": site_note or ("Reconstructed retrieval (cosine core, validated ~7.8x random). "
+                              "Ranks are our reconstruction, not the engine's internal rank."),
+    }

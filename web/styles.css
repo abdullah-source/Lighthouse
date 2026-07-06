@@ -313,6 +313,29 @@ a{color:inherit}
 .land-frame{width:100%;height:560px;border:0;display:block;background:#fff}
 .remeasure{margin-top:18px;font-size:13px;color:var(--muted);background:var(--accent-soft,#F5F8FF);border:1px solid var(--line2);border-radius:11px;padding:12px 14px}
 
+/* retrieval "why you lose" tab */
+.rx-bar{display:flex;gap:9px;margin-bottom:16px}
+.rx-input{flex:1;border:1px solid var(--line2);border-radius:10px;padding:10px 13px;font-size:14px;font-family:inherit;outline:none}
+.rx-input:focus{border-color:var(--accent)}
+.rx-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:14px}
+.rx-you{font-size:15px}.rx-you b{color:var(--accent);font-size:18px}
+.rx-fid{font-size:12.5px;color:var(--muted)}
+.rx-q{border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:12px}
+.rx-qh{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;font-weight:600;margin-bottom:9px}
+.rx-rank{color:var(--accent);font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rx-item{display:grid;grid-template-columns:150px 44px 1fr 38px;align-items:center;gap:9px;padding:3px 0;font-size:12.5px}
+.rx-item.you{background:var(--accent-soft,#F5F8FF);border-radius:7px;padding:5px 6px;margin:2px -6px}
+.rx-dom{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rx-item.you .rx-dom{font-weight:700}
+.rx-tag{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--faint)}
+.rx-item.cited .rx-tag{color:var(--good,#16A34A)}
+.rx-item.you .rx-tag{color:var(--accent);font-weight:700}
+.rx-track{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.rx-track>span{display:block;height:100%;background:var(--line2);border-radius:99px}
+.rx-item.cited .rx-track>span{background:var(--good,#16A34A)}
+.rx-item.you .rx-track>span{background:var(--accent)}
+.rx-sc{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+
 /* results panel (centered, single column) */
 .panel{padding:28px 0 64px}
 
