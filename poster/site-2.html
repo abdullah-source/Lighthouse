@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Lighthouse · Product Poster 2 of 2 (36 x 48)</title>
+<style>
+  /* DESIGN 2, POSTER 2 of 2: the website in action, step by step. White. 36x48 (1080x1440). */
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#4b5563;display:flex;justify-content:center;padding:24px;font-family:Arial,Helvetica,"Roboto",sans-serif;color:#0F172A}
+  .poster{width:1080px;height:1440px;background:#fff;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);display:flex;flex-direction:column}
+  .grad{background:linear-gradient(100deg,#0EA5E9,#7C3AED)}
+  .accent{color:#2563EB}
+  .head{height:128px;padding:0 46px;display:flex;align-items:center;justify-content:space-between;color:#fff}
+  .brand{display:flex;align-items:center;gap:15px}
+  .mark{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+  .mark div{width:15px;height:15px;border-radius:5px;background:#fff}
+  .brand .n{font-size:38px;font-weight:800;letter-spacing:-.02em}
+  .head .r{text-align:right}.head .tag{font-size:19px;font-weight:600}.head .pg{font-size:14px;opacity:.85;margin-top:4px}
+  .intro{padding:20px 46px 4px}
+  .intro h1{font-size:29px;font-weight:800;letter-spacing:-.02em}
+  .intro h1 b{color:#2563EB}
+  .steps{padding:16px 40px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .step{border:2px solid #E2E8F0;border-radius:15px;padding:16px 18px;height:340px;position:relative}
+  .sh{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+  .num{flex:none;width:34px;height:34px;border-radius:50%;background:linear-gradient(100deg,#0EA5E9,#7C3AED);color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:0}
+  .step p{font-size:15px;color:#475569;line-height:1.34;margin-bottom:11px}
+  .step .tagk{font-size:11px;font-weight:800;color:#7C3AED;letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:9px}
+  .mock{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:12px 14px}
+  .sbar{display:flex;align-items:center;gap:9px}.sf{flex:1;font-size:15px}.sf .c{color:#94A3B8}
+  .run{font-size:13px;font-weight:700;color:#fff;background:linear-gradient(100deg,#0EA5E9,#7C3AED);border-radius:8px;padding:7px 13px}
+  .eng{display:flex;align-items:center;gap:9px;font-size:15px;color:#334155;padding:3px 0}
+  .eng .d{width:9px;height:9px;border-radius:50%;background:#22C55E}.eng .r{margin-left:auto;font-size:13px;color:#94A3B8}
+  .prog{margin-top:8px;font-size:13px;color:#2563EB;font-weight:700}
+  .b{display:flex;align-items:center;gap:9px;font-size:14px;padding:2px 0}
+  .b .nm{width:92px;color:#334155}.b.you .nm{color:#2563EB;font-weight:800}.b.bad .nm{color:#DC2626;font-weight:800}
+  .b .tr{flex:1;height:11px;background:#EDF1F7;border-radius:99px;overflow:hidden}
+  .b .tr>span{display:block;height:100%;border-radius:99px;background:#CBD5E1}
+  .b.you .tr>span{background:linear-gradient(90deg,#0EA5E9,#7C3AED)}.b.bad .tr>span{background:#F87171}
+  .b .pc{width:32px;text-align:right;color:#475569;font-weight:700}
+  .rr{display:grid;grid-template-columns:1fr 34px;gap:8px;font-size:13.5px;padding:2px 0;color:#475569;align-items:center}
+  .rr.you{background:#EFF4FF;border:1px solid #BFDBFE;border-radius:8px;padding:6px 8px;margin:3px -8px;color:#2563EB;font-weight:800}
+  .rr b{color:#0F172A}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .card2{border:1px solid #E2E8F0;border-radius:8px;padding:9px 10px;background:#fff}
+  .card2 .l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:800;margin-bottom:4px}
+  .card2.b4 .l{color:#94A3B8}.card2.af .l{color:#16A34A}
+  .card2 h5{font-size:12.5px;font-weight:800;line-height:1.25}
+  .hl{background:#DCFCE7;color:#16A34A;border-radius:3px;padding:0 3px}
+  .trend{display:flex;align-items:flex-end;gap:8px;height:92px}
+  .trend .col{flex:1;background:linear-gradient(180deg,#8B5CF6,#0EA5E9);border-radius:6px 6px 0 0;position:relative}
+  .trend .col span{position:absolute;top:-20px;left:0;right:0;text-align:center;font-size:13px;font-weight:800;color:#334155}
+  .trend .col small{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:12px;color:#94A3B8}
+  .foot{margin-top:auto;height:104px;padding:0 46px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex:none}
+  .foot .who{font-size:22px;font-weight:800}.foot .who span{font-weight:500;opacity:.9;font-size:16px}
+  .foot .meta{font-size:15px;text-align:right;opacity:.95}
+  .qr{width:72px;height:72px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:10px;text-align:center;line-height:1.2}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="head grad">
+    <div class="brand"><div class="mark"><div></div></div><div class="n">Lighthouse</div></div>
+    <div class="r"><div class="tag">The measurement layer for AI search</div><div class="pg">Poster 2 of 2 &middot; the website in action</div></div>
+  </div>
+
+  <div class="intro"><h1>A live example: we ran <b>Hostinger</b> through the whole site.</h1></div>
+
+  <div class="steps">
+    <div class="step"><div class="sh"><span class="num">1</span><h3>Type it</h3></div><div class="tagk">/app composer</div><p>Enter a brand and a category. One field, one click.</p>
+      <div class="mock"><div class="sbar"><div class="sf">Hostinger <span class="c">&middot; web hosting</span></div><div class="run">Run audit</div></div></div>
+    </div>
+    <div class="step"><div class="sh"><span class="num">2</span><h3>Probe three engines</h3></div><div class="tagk">async fan-out</div><p>Real buyer questions asked 120 times, live.</p>
+      <div class="mock">
+        <div class="eng"><span class="d"></span>GPT-5<span class="r">done</span></div>
+        <div class="eng"><span class="d"></span>Claude<span class="r">done</span></div>
+        <div class="eng"><span class="d"></span>Perplexity Sonar<span class="r">done</span></div>
+        <div class="prog">120 / 120 answers &middot; parsed + RAG-indexed</div>
+      </div>
+    </div>
+    <div class="step"><div class="sh"><span class="num">3</span><h3>See who wins</h3></div><div class="tagk">Overview tab</div><p>Who AI recommends, and who is invisible.</p>
+      <div class="mock">
+        <div class="b you"><span class="nm">Hostinger</span><span class="tr"><span style="width:72%"></span></span><span class="pc">72</span></div>
+        <div class="b"><span class="nm">SiteGround</span><span class="tr"><span style="width:60%"></span></span><span class="pc">60</span></div>
+        <div class="b"><span class="nm">Bluehost</span><span class="tr"><span style="width:51%"></span></span><span class="pc">51</span></div>
+        <div class="b bad"><span class="nm">GoDaddy</span><span class="tr"><span style="width:18%"></span></span><span class="pc">18</span></div>
+      </div>
+    </div>
+    <div class="step"><div class="sh"><span class="num">4</span><h3>See why you lose</h3></div><div class="tagk">Why you lose tab &middot; retrieval</div><p>We reconstruct the retrieval and rank your page vs the cited winners.</p>
+      <div class="mock">
+        <div class="rr"><span><b>namepros.com</b></span><span>0.70</span></div>
+        <div class="rr"><span>cnet.com</span><span>0.63</span></div>
+        <div class="rr"><span>techradar.com</span><span>0.61</span></div>
+        <div class="rr you"><span>hostinger.com &middot; YOU &middot; #19 of 28</span><span>0.52</span></div>
+      </div>
+    </div>
+    <div class="step"><div class="sh"><span class="num">5</span><h3>Build the fix</h3></div><div class="tagk">Action tab</div><p>Grounded schema and landing copy, from the language AI rewards.</p>
+      <div class="mock ba">
+        <div class="card2 b4"><div class="l">Before</div><h5>Fast, affordable hosting.</h5></div>
+        <div class="card2 af"><div class="l">After</div><h5><span class="hl">Beginner-friendly</span> hosting, <span class="hl">24/7 support</span>.</h5></div>
+      </div>
+    </div>
+    <div class="step"><div class="sh"><span class="num">6</span><h3>Prove it moved</h3></div><div class="tagk">re-measure</div><p>Ship it, re-run in weeks, show the real movement.</p>
+      <div class="mock"><div class="trend">
+        <div class="col" style="height:44%"><span>41%</span><small>now</small></div>
+        <div class="col" style="height:64%"><span>&nbsp;</span><small>wk 2</small></div>
+        <div class="col" style="height:86%"><span>58%</span><small>wk 4</small></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="foot grad">
+    <div class="who">Abdullah Ali <span>&middot; Lighthouse</span></div>
+    <div class="meta">Summer Studio 2026<br>Advisor: ____________</div>
+    <div class="qr">scan for<br>live demo</div>
+  </div>
+</div>
+</body>
+</html>

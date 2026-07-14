@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Lighthouse Demo Poster (36 x 48)</title>
+<style>
+  /* Poster 2 of 2: the demo walkthrough. Portrait 36 x 48 in (3:4), 1080 x 1440 px.
+     A real example (Hostinger) walked through the product, step by step. */
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#4b5563;display:flex;justify-content:center;padding:24px;
+    font-family:Arial,Helvetica,"Roboto",sans-serif;color:#0F172A}
+  .poster{width:1080px;height:1440px;background:#fff;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .grad{background:linear-gradient(100deg,#0EA5E9,#7C3AED)}
+  .accent{color:#2563EB}
+  /* header */
+  .head{height:150px;padding:0 46px;display:flex;flex-direction:column;justify-content:center;color:#fff}
+  .head .row{display:flex;align-items:center;gap:16px}
+  .mark{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+  .mark div{width:15px;height:15px;border-radius:5px;background:#fff}
+  .head .n{font-size:36px;font-weight:800;letter-spacing:-.02em}
+  .head .t{font-size:24px;font-weight:700;margin-top:10px}
+  .head .t b{border-bottom:3px solid rgba(255,255,255,.6)}
+  /* steps grid */
+  .steps{padding:22px 40px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .step{border:2px solid #E2E8F0;border-radius:16px;padding:18px 20px;height:352px;position:relative}
+  .num{position:absolute;top:-16px;left:18px;width:38px;height:38px;border-radius:50%;
+    background:linear-gradient(100deg,#0EA5E9,#7C3AED);color:#fff;font-weight:800;font-size:20px;
+    display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:23px;font-weight:800;letter-spacing:-.01em;margin:8px 0 4px}
+  .step p{font-size:15.5px;color:#475569;line-height:1.35;margin-bottom:12px}
+  .mock{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:11px;padding:13px 15px}
+  /* mock: search */
+  .sbar{display:flex;align-items:center;gap:9px}
+  .sf{flex:1;font-size:15px;color:#0F172A}.sf .c{color:#94A3B8}
+  .run{font-size:13px;font-weight:700;color:#fff;background:linear-gradient(100deg,#0EA5E9,#7C3AED);border-radius:8px;padding:7px 13px}
+  /* mock: engines */
+  .eng{display:flex;align-items:center;gap:9px;font-size:15px;color:#334155;padding:3px 0}
+  .eng .d{width:9px;height:9px;border-radius:50%;background:#22C55E}
+  .eng .r{margin-left:auto;font-size:13px;color:#94A3B8}
+  .prog{margin-top:8px;font-size:13px;color:#2563EB;font-weight:700}
+  /* mock: bars */
+  .b{display:flex;align-items:center;gap:9px;font-size:14px;padding:2px 0}
+  .b .nm{width:96px;color:#334155}.b.you .nm{color:#2563EB;font-weight:800}.b.bad .nm{color:#DC2626;font-weight:800}
+  .b .tr{flex:1;height:11px;background:#EDF1F7;border-radius:99px;overflow:hidden}
+  .b .tr>span{display:block;height:100%;border-radius:99px;background:#CBD5E1}
+  .b.you .tr>span{background:linear-gradient(90deg,#0EA5E9,#7C3AED)}.b.bad .tr>span{background:#F87171}
+  .b .pc{width:34px;text-align:right;color:#475569;font-weight:700}
+  /* mock: retrieval */
+  .rr{display:grid;grid-template-columns:1fr 34px;gap:8px;font-size:13.5px;padding:2px 0;color:#475569;align-items:center}
+  .rr.you{background:#EFF4FF;border:1px solid #BFDBFE;border-radius:8px;padding:6px 8px;margin:3px -8px;color:#2563EB;font-weight:800}
+  .rr b{color:#0F172A}
+  /* mock: before/after */
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .card2{border:1px solid #E2E8F0;border-radius:8px;padding:9px 10px;background:#fff}
+  .card2 .l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:800;margin-bottom:4px}
+  .card2.b4 .l{color:#94A3B8}.card2.af .l{color:#16A34A}
+  .card2 h5{font-size:13px;font-weight:800;line-height:1.25}
+  .hl{background:#DCFCE7;color:#16A34A;border-radius:3px;padding:0 3px}
+  /* mock: trend */
+  .trend{display:flex;align-items:flex-end;gap:8px;height:96px}
+  .trend .col{flex:1;background:linear-gradient(180deg,#8B5CF6,#0EA5E9);border-radius:6px 6px 0 0;position:relative}
+  .trend .col span{position:absolute;top:-20px;left:0;right:0;text-align:center;font-size:13px;font-weight:800;color:#334155}
+  .trend .col small{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:12px;color:#94A3B8}
+  /* footer */
+  .foot{position:absolute;bottom:0;left:0;right:0;height:120px;padding:0 50px;color:#fff;display:flex;align-items:center;justify-content:space-between}
+  .foot .who{font-size:24px;font-weight:800}.foot .who span{font-weight:500;opacity:.9;font-size:18px}
+  .foot .meta{font-size:16px;text-align:right;opacity:.95}
+  .qr{width:78px;height:78px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:11px;text-align:center;line-height:1.2}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="head grad">
+    <div class="row"><div class="mark"><div></div></div><div class="n">Lighthouse</div></div>
+    <div class="t">See it work: we measured <b>Hostinger</b> in web hosting, live</div>
+  </div>
+
+  <div class="steps">
+    <!-- 1 -->
+    <div class="step"><div class="num">1</div>
+      <h3>Type it</h3><p>Your team enters a brand and a category. One field, one click.</p>
+      <div class="mock"><div class="sbar"><div class="sf">Hostinger <span class="c">&middot; web hosting</span></div><div class="run">Run audit</div></div></div>
+    </div>
+    <!-- 2 -->
+    <div class="step"><div class="num">2</div>
+      <h3>We probe three engines</h3><p>We ask GPT-5, Claude, and Perplexity the real buyer questions, 120 times, live.</p>
+      <div class="mock">
+        <div class="eng"><span class="d"></span>GPT-5<span class="r">done</span></div>
+        <div class="eng"><span class="d"></span>Claude<span class="r">done</span></div>
+        <div class="eng"><span class="d"></span>Perplexity<span class="r">done</span></div>
+        <div class="prog">120 / 120 answers collected</div>
+      </div>
+    </div>
+    <!-- 3 -->
+    <div class="step"><div class="num">3</div>
+      <h3>See who wins</h3><p>Who the AI recommends, and who is invisible. GoDaddy, the giant, ranks near the bottom.</p>
+      <div class="mock">
+        <div class="b you"><span class="nm">Hostinger</span><span class="tr"><span style="width:72%"></span></span><span class="pc">72</span></div>
+        <div class="b"><span class="nm">SiteGround</span><span class="tr"><span style="width:60%"></span></span><span class="pc">60</span></div>
+        <div class="b"><span class="nm">Bluehost</span><span class="tr"><span style="width:51%"></span></span><span class="pc">51</span></div>
+        <div class="b bad"><span class="nm">GoDaddy</span><span class="tr"><span style="width:18%"></span></span><span class="pc">18</span></div>
+      </div>
+    </div>
+    <!-- 4 -->
+    <div class="step"><div class="num">4</div>
+      <h3>See why you lose</h3><p>We reconstruct the retrieval and rank your page against the ones the AI cites.</p>
+      <div class="mock">
+        <div class="rr"><span><b>namepros.com</b></span><span>0.70</span></div>
+        <div class="rr"><span>cnet.com</span><span>0.63</span></div>
+        <div class="rr"><span>techradar.com</span><span>0.61</span></div>
+        <div class="rr you"><span>hostinger.com &middot; YOU &middot; #19 of 28</span><span>0.52</span></div>
+      </div>
+    </div>
+    <!-- 5 -->
+    <div class="step"><div class="num">5</div>
+      <h3>Build the fix</h3><p>Publish-ready schema and landing copy, from the exact language the AI rewards.</p>
+      <div class="mock ba">
+        <div class="card2 b4"><div class="l">Before</div><h5>Fast, affordable hosting.</h5></div>
+        <div class="card2 af"><div class="l">After</div><h5><span class="hl">Beginner-friendly</span> hosting with <span class="hl">24/7 support</span>.</h5></div>
+      </div>
+    </div>
+    <!-- 6 -->
+    <div class="step"><div class="num">6</div>
+      <h3>Prove it moved</h3><p>Ship the change, re-measure in weeks, and show the real movement.</p>
+      <div class="mock"><div class="trend">
+        <div class="col" style="height:44%"><span>41%</span><small>now</small></div>
+        <div class="col" style="height:64%"><span>&nbsp;</span><small>wk 2</small></div>
+        <div class="col" style="height:86%"><span>58%</span><small>wk 4</small></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="foot grad">
+    <div class="who">Abdullah Ali <span>&middot; Lighthouse</span></div>
+    <div class="meta">Summer Studio 2026<br>Advisor: ____________</div>
+    <div class="qr">scan for<br>live demo</div>
+  </div>
+</div>
+</body>
+</html>

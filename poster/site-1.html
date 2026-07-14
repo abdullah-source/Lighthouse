@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Lighthouse · Product Poster 1 of 2 (36 x 48)</title>
+<style>
+  /* DESIGN 2, POSTER 1 of 2: the website as a whole. White, technical. 36x48 (1080x1440). */
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#4b5563;display:flex;justify-content:center;padding:24px;font-family:Arial,Helvetica,"Roboto",sans-serif;color:#0F172A}
+  .poster{width:1080px;height:1440px;background:#fff;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);display:flex;flex-direction:column}
+  .grad{background:linear-gradient(100deg,#0EA5E9,#7C3AED)}
+  .accent{color:#2563EB}
+  .head{height:128px;padding:0 46px;display:flex;align-items:center;justify-content:space-between;color:#fff}
+  .brand{display:flex;align-items:center;gap:15px}
+  .mark{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+  .mark div{width:15px;height:15px;border-radius:5px;background:#fff}
+  .brand .n{font-size:38px;font-weight:800;letter-spacing:-.02em}
+  .head .r{text-align:right}.head .tag{font-size:19px;font-weight:600}.head .pg{font-size:14px;opacity:.85;margin-top:4px}
+  .intro{padding:22px 46px 6px}
+  .intro h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .intro p{font-size:17px;color:#475569;margin-top:6px}
+  /* browser mock */
+  .browser{margin:14px 46px;border:2px solid #E2E8F0;border-radius:16px;overflow:hidden;box-shadow:0 24px 50px -30px rgba(15,23,42,.4)}
+  .bchrome{display:flex;align-items:center;gap:8px;padding:11px 16px;background:#F1F5F9;border-bottom:1px solid #E2E8F0}
+  .bchrome i{width:11px;height:11px;border-radius:50%;background:#CBD5E1}
+  .bchrome .url{margin-left:12px;font-size:13px;color:#64748B;background:#fff;border:1px solid #E2E8F0;border-radius:7px;padding:4px 12px}
+  .app{padding:0}
+  .appnav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #EEF2F7}
+  .appnav .ttl{font-size:19px;font-weight:800}.appnav .ttl span{color:#94A3B8;font-weight:500;font-size:14px}
+  .tabs{display:flex;gap:7px}
+  .tab{font-size:13px;color:#64748B;padding:6px 12px;border-radius:8px;border:1px solid transparent}
+  .tab.on{color:#2563EB;background:#EFF4FF;border-color:#BFDBFE;font-weight:700}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #EEF2F7}
+  .kpi{padding:14px 20px;border-right:1px solid #EEF2F7}.kpi:last-child{border:0}
+  .kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#94A3B8;font-weight:700}
+  .kpi .v{font-size:28px;font-weight:800;margin-top:3px}.kpi .v.c{color:#2563EB}
+  .appbody{display:grid;grid-template-columns:1.35fr .9fr;gap:22px;padding:18px 20px}
+  .appbody h4{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#94A3B8;font-weight:800;margin-bottom:10px}
+  .b{display:flex;align-items:center;gap:10px;font-size:15px;padding:4px 0}
+  .b .nm{width:120px;color:#334155}.b.you .nm{color:#2563EB;font-weight:800}.b.bad .nm{color:#DC2626;font-weight:800}
+  .b .tr{flex:1;height:13px;background:#EEF2F7;border-radius:99px;overflow:hidden}
+  .b .tr>span{display:block;height:100%;border-radius:99px;background:#CBD5E1}
+  .b.you .tr>span{background:linear-gradient(90deg,#0EA5E9,#7C3AED)}.b.bad .tr>span{background:#F87171}
+  .b .pc{width:36px;text-align:right;font-weight:700;color:#334155}
+  .src{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;border-bottom:1px solid #EEF2F7;color:#475569}
+  .src:last-child{border:0}.src b{color:#2563EB}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .pill{font-size:12.5px;border:1px solid #E2E8F0;border-radius:8px;padding:4px 9px;color:#16A34A}
+  .pill.lack{color:#DC2626}
+  /* feature callouts */
+  .feats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:8px 46px}
+  .feat{border:2px solid #E2E8F0;border-radius:13px;padding:13px 13px}
+  .feat .k{font-size:12px;font-weight:800;color:#2563EB;letter-spacing:.03em}
+  .feat h3{font-size:16px;font-weight:800;margin:5px 0 3px}
+  .feat p{font-size:12.5px;color:#64748B;line-height:1.34}
+  /* tech strip */
+  .tech{margin:8px 46px 0;background:#F8FAFC;border:2px solid #E2E8F0;border-radius:13px;padding:13px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .tech .lbl{font-size:13px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:.04em}
+  .chip{font-size:13px;color:#334155;background:#fff;border:1px solid #E2E8F0;border-radius:7px;padding:5px 11px}
+  /* science section */
+  .sci{padding:14px 46px 6px}
+  .sci-h{font-size:20px;font-weight:800;letter-spacing:-.01em;color:#2563EB;margin-bottom:13px}
+  .pipe{display:flex;flex-wrap:wrap;align-items:stretch}
+  .stage{flex:1 1 0;min-width:150px;border:2px solid #E2E8F0;border-radius:12px;padding:12px 13px;margin:5px}
+  .stage .t{font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .stage .d{font-size:12.5px;color:#64748B;margin-top:3px;line-height:1.34}
+  .stage.k{border-color:#BFDBFE;background:#EFF4FF}.stage.k .t{color:#2563EB}
+  .arrow{align-self:center;color:#CBD5E1;font-size:22px;font-weight:800;padding:0 2px}
+  .pdown{text-align:center;color:#CBD5E1;font-size:22px;font-weight:800;margin:3px 0}
+  .sci-note{font-size:16px;color:#334155;line-height:1.5;margin-top:14px}
+  .sci-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+  .sci-stats .st{border:2px solid #E2E8F0;border-radius:12px;padding:13px 16px;text-align:center}
+  .sci-stats .st b{display:block;font-size:30px;font-weight:900;color:#2563EB;letter-spacing:-.02em}
+  .sci-stats .st span{font-size:13px;color:#64748B}
+  .foot{margin-top:auto;height:104px;padding:0 46px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex:none}
+  .foot .who{font-size:22px;font-weight:800}.foot .who span{font-weight:500;opacity:.9;font-size:16px}
+  .foot .meta{font-size:15px;text-align:right;opacity:.95}
+  .qr{width:72px;height:72px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:10px;text-align:center;line-height:1.2}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="head grad">
+    <div class="brand"><div class="mark"><div></div></div><div class="n">Lighthouse</div></div>
+    <div class="r"><div class="tag">The measurement layer for AI search</div><div class="pg">Poster 1 of 2 &middot; the product</div></div>
+  </div>
+
+  <div class="intro">
+    <h1>One product: <span class="accent">measure, diagnose, build, prove.</span></h1>
+    <p>Enter a brand and a category. Everything below is one live dashboard, powered by real probes of three engines.</p>
+  </div>
+
+  <!-- DASHBOARD MOCK -->
+  <div class="browser">
+    <div class="bchrome"><i></i><i></i><i></i><span class="url">lighthouse.app/app</span></div>
+    <div class="app">
+      <div class="appnav">
+        <div class="ttl">Hostinger <span>&middot; web hosting</span></div>
+        <div class="tabs"><span class="tab on">Overview</span><span class="tab">Vibes</span><span class="tab">Action</span><span class="tab">Why you lose</span><span class="tab">Ask</span></div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Mention rate</div><div class="v c">72%</div></div>
+        <div class="kpi"><div class="l">Share of voice</div><div class="v">24%</div></div>
+        <div class="kpi"><div class="l">Avg position</div><div class="v">2.4</div></div>
+        <div class="kpi"><div class="l">Engines</div><div class="v">3</div></div>
+      </div>
+      <div class="appbody">
+        <div>
+          <h4>You vs the field</h4>
+          <div class="b you"><span class="nm">Hostinger</span><span class="tr"><span style="width:72%"></span></span><span class="pc">72</span></div>
+          <div class="b"><span class="nm">SiteGround</span><span class="tr"><span style="width:60%"></span></span><span class="pc">60</span></div>
+          <div class="b"><span class="nm">Bluehost</span><span class="tr"><span style="width:51%"></span></span><span class="pc">51</span></div>
+          <div class="b"><span class="nm">DreamHost</span><span class="tr"><span style="width:41%"></span></span><span class="pc">41</span></div>
+          <div class="b bad"><span class="nm">GoDaddy</span><span class="tr"><span style="width:18%"></span></span><span class="pc">18</span></div>
+          <div class="pills">
+            <span class="pill">best overall value</span><span class="pill">cheapest option</span>
+            <span class="pill lack">excellent support</span><span class="pill lack">beginner-friendly</span>
+          </div>
+        </div>
+        <div>
+          <h4>Sources AI cites</h4>
+          <div class="src"><span>reddit.com</span><b>38</b></div>
+          <div class="src"><span>cnet.com</span><b>30</b></div>
+          <div class="src"><span>youtube.com</span><b>31</b></div>
+          <div class="src"><span>techradar.com</span><b>17</b></div>
+          <div class="src"><span>namecheap.com</span><b>14</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURE CALLOUTS -->
+  <div class="feats">
+    <div class="feat"><div class="k">MEASURE</div><h3>Every engine</h3><p>Mention rate, share of voice, position, per model.</p></div>
+    <div class="feat"><div class="k">VIBES</div><h3>The language</h3><p>Words you own vs words rivals own that you lack.</p></div>
+    <div class="feat"><div class="k">SOURCES</div><h3>Provenance</h3><p>The exact pages each engine cites (RAG-indexed).</p></div>
+    <div class="feat"><div class="k">WHY YOU LOSE</div><h3>Retrieval</h3><p>Your page ranked against the ones AI cites.</p></div>
+    <div class="feat"><div class="k">ASK</div><h3>Grounded Q&amp;A</h3><p>Query your own data; answers cite real sources.</p></div>
+  </div>
+
+  <!-- SCIENCE -->
+  <div class="sci">
+    <div class="sci-h">The science: visibility is decided at retrieval time</div>
+    <div class="pipe">
+      <div class="stage"><div class="t">Buyer queries</div><div class="d">grounded panel from first-party voice</div></div>
+      <div class="arrow">&rarr;</div>
+      <div class="stage"><div class="t">Probe 3 engines</div><div class="d">GPT-5 &middot; Claude &middot; Perplexity Sonar</div></div>
+      <div class="arrow">&rarr;</div>
+      <div class="stage"><div class="t">Parse + cite</div><div class="d">brands, positions, vibes, source URLs</div></div>
+      <div class="arrow">&rarr;</div>
+      <div class="stage"><div class="t">RAG index</div><div class="d">chunk &rarr; embed 1536-d &rarr; pgvector</div></div>
+    </div>
+    <div class="pdown">&darr;</div>
+    <div class="pipe">
+      <div class="stage k"><div class="t">Reconstruct retrieval</div><div class="d">embed candidate pages, cosine-rank vs the query</div></div>
+      <div class="arrow">&rarr;</div>
+      <div class="stage k"><div class="t">Validate fidelity</div><div class="d">our ranking vs the real citations (7.8x random)</div></div>
+      <div class="arrow">&rarr;</div>
+      <div class="stage"><div class="t">Act</div><div class="d">grounded content + schema, then re-measure</div></div>
+    </div>
+    <div class="sci-note">Before an AI answers, it <b>retrieves</b> pages and reads from those. We rebuild that step with our own RAG stack and rank your page against the ones it cites, validated <b>7.8x better than chance</b> against the real citations. That is how we explain <b>why</b> you lose, not just that you do.</div>
+    <div class="sci-stats">
+      <div class="st"><b>7.8x</b><span>retrieval fidelity vs chance</span></div>
+      <div class="st"><b>~1&cent;</b><span>added cost per audit</span></div>
+      <div class="st"><b>#19 / 28</b><span>Hostinger's own page rank</span></div>
+    </div>
+  </div>
+
+  <!-- TECH STRIP -->
+  <div class="tech">
+    <span class="lbl">Built with</span>
+    <span class="chip">FastAPI</span><span class="chip">Postgres + pgvector</span><span class="chip">text-embedding-3-small</span>
+    <span class="chip">GPT-5 &middot; Claude &middot; Perplexity</span><span class="chip">RAG retrieval</span><span class="chip">MCP server</span>
+  </div>
+
+  <div class="foot grad">
+    <div class="who">Abdullah Ali <span>&middot; Lighthouse</span></div>
+    <div class="meta">Summer Studio 2026<br>Advisor: ____________</div>
+    <div class="qr">scan for<br>live demo</div>
+  </div>
+</div>
+</body>
+</html>

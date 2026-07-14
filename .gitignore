@@ -45,3 +45,8 @@ Thumbs.db
 *.log
 logs/
 .gstack/
+
+# local backups + generated poster exports
+web/*.bak
+poster/*.png
+poster/*.pdf

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Lighthouse · Thesis Poster (36 x 48)</title>
+<style>
+  /* DESIGN 1: single thesis poster. What the system does and how it works.
+     Portrait 36 x 48 in (3:4), 1080 x 1440 px. White, technical. */
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#4b5563;display:flex;justify-content:center;padding:24px;
+    font-family:Arial,Helvetica,"Roboto",sans-serif;color:#0F172A}
+  .poster{width:1080px;height:1440px;background:#fff;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);display:flex;flex-direction:column}
+  .grad{background:linear-gradient(100deg,#0EA5E9,#7C3AED)}
+  .accent{color:#2563EB}
+  /* finding banner */
+  .banner{padding:22px 46px 12px;color:#fff;display:flex;gap:26px;align-items:flex-start;flex:none}
+  .btext{flex:1}
+  .hmc{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:8px;margin-top:2px}
+  .eship{font-size:15px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:7px 14px}
+  .logo-slot{width:240px;height:100px}
+  .banner .kick{font-size:16px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.9}
+  .banner h1{font-size:35px;font-weight:800;line-height:1.1;margin-top:8px;letter-spacing:-.02em}
+  .banner h1 u{text-underline-offset:5px;text-decoration-thickness:3px}
+  /* title strip */
+  .title{padding:14px 46px 6px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #EEF2F7;flex:none}
+  .title .l{display:flex;align-items:center;gap:14px}
+  .title .m{width:34px;height:34px;border-radius:9px;background:linear-gradient(100deg,#0EA5E9,#7C3AED)}
+  .title .n{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .title .a{font-size:16px;color:#64748B}
+  /* body grid */
+  .body{display:grid;grid-template-columns:340px 1fr;gap:24px;padding:14px 46px 8px;flex:none}
+  .sec{margin-bottom:16px}
+  .sec .h{font-size:18px;font-weight:800;color:#2563EB;letter-spacing:.02em;margin-bottom:8px;display:flex;align-items:center;gap:9px}
+  .sec .h .b{width:22px;height:22px;border-radius:6px;background:#EFF4FF;color:#2563EB;font-size:13px;display:flex;align-items:center;justify-content:center;font-weight:800}
+  .sec p{font-size:16px;color:#334155;line-height:1.42}
+  .sec ul{margin:6px 0 0 2px;list-style:none}
+  .sec li{font-size:15px;color:#334155;line-height:1.5;padding-left:18px;position:relative}
+  .sec li:before{content:"";position:absolute;left:0;top:9px;width:7px;height:7px;border-radius:50%;background:#7C3AED}
+  .sec code{font-family:ui-monospace,Menlo,monospace;font-size:14px;background:#F1F5F9;padding:1px 5px;border-radius:4px;color:#0F172A}
+  /* pipeline figure */
+  .fig{border:2px solid #E2E8F0;border-radius:16px;padding:22px 22px}
+  .fig .cap{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#64748B;margin-bottom:14px}
+  .pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:0}
+  .stage{flex:1 1 0;min-width:150px;border:2px solid #E2E8F0;border-radius:12px;padding:13px 15px;margin:7px}
+  .stage .t{font-size:14.5px;font-weight:800;letter-spacing:-.01em}
+  .stage .d{font-size:12.5px;color:#64748B;margin-top:3px;line-height:1.32}
+  .stage.k{border-color:#BFDBFE;background:#EFF4FF}
+  .stage.k .t{color:#2563EB}
+  .arrow{align-self:center;color:#CBD5E1;font-size:22px;font-weight:800;padding:0 2px}
+  /* results figures */
+  .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
+  .rcard{border:2px solid #E2E8F0;border-radius:14px;padding:19px 20px}
+  .rcard .c{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#64748B;margin-bottom:10px}
+  .b{display:flex;align-items:center;gap:10px;font-size:15px;padding:6px 0}
+  .b .nm{width:104px;color:#334155}.b.you .nm{color:#2563EB;font-weight:800}.b.bad .nm{color:#DC2626;font-weight:800}
+  .b .tr{flex:1;height:12px;background:#EEF2F7;border-radius:99px;overflow:hidden}
+  .b .tr>span{display:block;height:100%;border-radius:99px;background:#CBD5E1}
+  .b.you .tr>span{background:linear-gradient(90deg,#0EA5E9,#7C3AED)}.b.bad .tr>span{background:#F87171}
+  .b .pc{width:34px;text-align:right;font-weight:700;color:#334155}
+  .metric{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid #EEF2F7;font-size:15px;color:#475569}
+  .metric:last-child{border:0}.metric b{font-size:24px;color:#2563EB}
+  /* act layer (schema transcript + before/after) */
+  .act{display:grid;grid-template-columns:1.12fr .88fr;gap:22px;padding:16px 46px 16px;flex:none}
+  .acode{border:2px solid #E2E8F0;border-radius:14px;overflow:hidden}
+  .acode .ah{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#64748B;padding:12px 16px;border-bottom:1px solid #EEF2F7;background:#F8FAFC}
+  .acode pre{padding:16px 18px;font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:1.7;color:#0F172A;white-space:pre-wrap}
+  .acode .k{color:#7C3AED;font-weight:600}.acode .s{color:#16A34A}
+  .aside .ah{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#2563EB;margin-bottom:10px}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .bc{border:1px solid #E2E8F0;border-radius:10px;padding:11px 12px}
+  .bc .l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:800;margin-bottom:5px}
+  .bc.b4 .l{color:#94A3B8}.bc.af .l{color:#16A34A}
+  .bc .h5{font-size:13.5px;font-weight:700;line-height:1.3}
+  .hl{background:#DCFCE7;color:#16A34A;border-radius:3px;padding:0 3px}
+  .aside p{font-size:14.5px;color:#334155;line-height:1.4}
+  /* footer */
+  /* what your team sees: monitor mockup */
+  .whatyousee{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#2563EB;margin:4px 0 8px}
+  .monitor .scr{background:#fff;border:6px solid #0B1020;border-radius:12px;overflow:hidden;box-shadow:0 14px 34px -22px rgba(0,0,0,.55)}
+  .m-nav{display:flex;justify-content:space-between;align-items:center;background:#0B1020;color:#fff;font-weight:800;font-size:13px;padding:7px 11px}
+  .m-nav span{font-weight:500;font-size:11px;color:#94A3B8}
+  .m-kpis{display:flex;border-bottom:1px solid #EEF2F7}
+  .m-kpis>div{flex:1;padding:10px;border-right:1px solid #EEF2F7;text-align:center}
+  .m-kpis>div:last-child{border:0}
+  .m-kpis b{display:block;font-size:22px;font-weight:900;color:#2563EB;letter-spacing:-.02em}
+  .m-kpis span{font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:.04em}
+  .m-tabs{display:flex;gap:6px;padding:10px 13px;border-bottom:1px solid #EEF2F7}
+  .m-tabs i{width:38px;height:9px;border-radius:99px;background:#E2E8F0}.m-tabs i.on{background:#2563EB;width:52px}
+  .m-body{padding:14px 14px 16px}
+  .m-bar{height:17px;background:#EEF2F7;border-radius:99px;overflow:hidden;margin:11px 0}
+  .m-bar>span{display:block;height:100%;border-radius:99px;background:#CBD5E1}
+  .m-bar.you>span{background:linear-gradient(90deg,#0EA5E9,#7C3AED)}.m-bar.bad>span{background:#F87171}
+  .neck{width:66px;height:13px;background:#CBD5E1;margin:0 auto}
+  .base{width:150px;height:9px;background:#94A3B8;margin:0 auto;border-radius:99px}
+  /* the gap: measurement + fidelity on one visual */
+  .gapcard{border:2px solid #E2E8F0;border-radius:14px;padding:16px 18px;margin-bottom:13px}
+  .gc-h{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-bottom:13px}.gc-h b{color:#DC2626}
+  .gv{display:flex;align-items:center;gap:12px;margin:12px 0}
+  .gv-l{width:158px;font-size:13.5px;color:#475569}
+  .gv-tr{flex:1;height:36px;background:#EEF2F7;border-radius:8px;overflow:hidden}
+  .gv-tr>span{display:flex;align-items:center;justify-content:flex-end;height:100%;color:#fff;font-weight:800;font-size:14px;padding-right:11px;border-radius:8px;white-space:nowrap}
+  .gv-tr>span.good{background:linear-gradient(90deg,#0EA5E9,#7C3AED)}
+  .gv-tr>span.warn{background:#F87171}
+  .gv-gap{font-size:14.5px;font-weight:700;color:#DC2626;margin-top:8px}
+  .whocard{border:2px solid #E2E8F0;border-radius:14px;padding:15px 18px;margin-bottom:12px}
+  .wc-h{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#64748B;margin-bottom:10px}
+  .b2{display:flex;align-items:center;gap:10px;font-size:14px;padding:3px 0}
+  .b2 .nm{width:96px;color:#334155}.b2.bad .nm{color:#DC2626;font-weight:800}
+  .b2 .tr{flex:1;height:11px;background:#EEF2F7;border-radius:99px;overflow:hidden}
+  .b2 .tr>span{display:block;height:100%;border-radius:99px;background:#CBD5E1}
+  .b2.bad .tr>span{background:#F87171}
+  .b2 .pc{width:30px;text-align:right;font-weight:700;color:#334155}
+  .wc-note{font-size:12.5px;color:#64748B;margin-top:9px;line-height:1.4}
+  .fidbar{font-size:15px;color:#0F172A;background:#EFF4FF;border:1px solid #BFDBFE;border-radius:10px;padding:12px 15px}.fidbar b{color:#2563EB}
+  /* compact pipeline strip */
+  .pipestrip{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:12px 46px 2px;font-size:13.5px}
+  .pipestrip .ps-h{font-weight:800;color:#2563EB;text-transform:uppercase;letter-spacing:.04em;margin-right:2px}
+  .pipestrip .ps{border:2px solid #E2E8F0;border-radius:9px;padding:7px 12px;font-weight:600;color:#334155}
+  .pipestrip .ar{color:#CBD5E1;font-weight:800;font-size:18px}
+  .foot{margin-top:auto;height:104px;padding:0 46px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex:none}
+  .foot .who{font-size:22px;font-weight:800}.foot .who span{font-weight:500;opacity:.9;font-size:16px}
+  .foot .meta{font-size:15px;text-align:right;opacity:.95}
+  .qr{width:72px;height:72px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:10px;text-align:center;line-height:1.2}
+</style>
+</head>
+<body>
+<div class="poster">
+
+  <div class="banner grad">
+    <div class="btext">
+      <div class="kick">Lighthouse &middot; the measurement layer for AI search</div>
+      <h1>AI now decides which brands get recommended. Lighthouse shows you <u>why you lose</u>, and proves the fix.</h1>
+    </div>
+    <div class="hmc"><div class="eship">eShip Studio</div><div class="logo-slot"></div></div>
+  </div>
+
+  <div class="title">
+    <div class="l"><div class="m"></div><div class="n">Reconstructing Retrieval for Generative Search Visibility</div></div>
+    <div class="a">Abdullah Ali &middot; Advisor: Prof. Zachary Dodds</div>
+  </div>
+
+  <div class="body">
+    <!-- LEFT: problem + method -->
+    <div>
+      <div class="sec">
+        <div class="h"><span class="b">1</span>The problem</div>
+        <p>Buyers now ask AI what to buy. It names a few brands. If you are not one of them, you are invisible, and you never see the customer you lost.</p>
+      </div>
+      <div class="sec">
+        <div class="h"><span class="b">2</span>How it works</div>
+        <ul>
+          <li>Ask GPT-5, Claude, and Perplexity real buyer questions; capture who wins and the <b>pages they cite</b>.</li>
+          <li>Index the answers with embeddings into <code>pgvector</code>.</li>
+          <li>Reconstruct retrieval: rank candidate pages by cosine to the query, then compare to what the engine cited.</li>
+          <li>Validate against the real citations, build the fix, and re-measure.</li>
+        </ul>
+      </div>
+      <div class="sec">
+        <div class="h"><span class="b">3</span>Why we win</div>
+        <p>Everyone measures the answer. We model the <b>retrieval</b> behind it, and the labeled data compounds with every audit, a moat a downstream tool cannot collect.</p>
+      </div>
+      <div class="sec">
+        <div class="h"><span class="b">4</span>The proof</div>
+        <p>Then the loop closes: ship the change, let the crawlers re-read the page, and re-run the audit. That before-and-after is the proof, not a projection.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT: system + results -->
+    <div>
+      <div class="fig">
+        <div class="cap">The system: measure &rarr; index &rarr; reconstruct &rarr; act</div>
+        <div class="pipe">
+          <div class="stage"><div class="t">Buyer queries</div><div class="d">from first-party voice</div></div>
+          <div class="arrow">&rarr;</div>
+          <div class="stage"><div class="t">Probe 3 engines</div><div class="d">GPT-5 &middot; Claude &middot; Perplexity</div></div>
+          <div class="arrow">&rarr;</div>
+          <div class="stage"><div class="t">Parse + cite</div><div class="d">brands, vibes, source URLs</div></div>
+          <div class="arrow">&rarr;</div>
+          <div class="stage"><div class="t">RAG index</div><div class="d">embed &rarr; pgvector</div></div>
+        </div>
+        <div style="text-align:center;color:#CBD5E1;font-size:24px;font-weight:800;margin:2px 0">&darr;</div>
+        <div class="pipe">
+          <div class="stage k"><div class="t">Reconstruct retrieval</div><div class="d">cosine-rank pages vs the query</div></div>
+          <div class="arrow">&rarr;</div>
+          <div class="stage k"><div class="t">Validate fidelity</div><div class="d">vs the real citations (7.8x random)</div></div>
+          <div class="arrow">&rarr;</div>
+          <div class="stage"><div class="t">Act</div><div class="d">schema + content, re-measure</div></div>
+        </div>
+      </div>
+      <div class="rgrid">
+        <div class="rcard">
+          <div class="c">Who AI recommends: web hosting</div>
+          <div class="b you"><span class="nm">Hostinger</span><span class="tr"><span style="width:72%"></span></span><span class="pc">72</span></div>
+          <div class="b"><span class="nm">SiteGround</span><span class="tr"><span style="width:60%"></span></span><span class="pc">60</span></div>
+          <div class="b"><span class="nm">Bluehost</span><span class="tr"><span style="width:51%"></span></span><span class="pc">51</span></div>
+          <div class="b bad"><span class="nm">GoDaddy</span><span class="tr"><span style="width:18%"></span></span><span class="pc">18</span></div>
+          <p style="font-size:13px;color:#64748B;margin-top:8px">GoDaddy is the biggest host on earth, yet the AI says "avoid it." Brand size is not AI visibility.</p>
+        </div>
+        <div class="rcard">
+          <div class="c">The gap, and the proof</div>
+          <div class="metric"><span>Recommended in answers</span><b>72%</b></div>
+          <div class="metric"><span>Your own page's rank</span><b>#19/28</b></div>
+          <div class="metric"><span>Reconstruction vs random</span><b>7.8x</b></div>
+          <p style="font-size:13px;color:#64748B;margin-top:8px">You win on other people's pages, not your own. That gap is the opportunity.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="act">
+    <div class="acode">
+      <div class="ah">Act layer: schema.org markup, generated from the evidence</div>
+      <pre>{
+  <span class="k">"@context"</span>: <span class="s">"https://schema.org"</span>,
+  <span class="k">"@type"</span>: <span class="s">"Product"</span>,
+  <span class="k">"name"</span>: <span class="s">"Hostinger Web Hosting"</span>,
+  <span class="k">"description"</span>:
+    <span class="s">"Beginner-friendly hosting with 24/7 expert support."</span>,
+  <span class="k">"audience"</span>: <span class="s">"first-time site owners"</span>,
+  <span class="k">"review"</span>: { <span class="k">"@type"</span>: <span class="s">"Review"</span>,
+    <span class="k">"reviewBody"</span>: <span class="s">"officially recommended"</span> }
+}</pre>
+    </div>
+    <div class="aside">
+      <div class="ah">The fix, then proof</div>
+      <div class="ba">
+        <div class="bc b4"><div class="l">Before</div><div class="h5">Fast, affordable hosting.</div></div>
+        <div class="bc af"><div class="l">After</div><div class="h5"><span class="hl">Beginner-friendly</span> hosting with <span class="hl">24/7 support</span>, <span class="hl">officially recommended</span>.</div></div>
+      </div>
+      <p>We generate publish-ready content and schema.org markup from the exact language the AI rewards, then drop it on the page. On the next crawl the engines read it, and we re-measure across all three to show the real movement, not a projection. It runs on about a cent per audit: a control system for retrieval, not a telescope on the answer. And every audit adds to the labeled dataset, so the reconstruction sharpens with each brand we measure.</p>
+    </div>
+  </div>
+
+  <div class="foot grad">
+    <div class="who">Abdullah Ali <span>&middot; Lighthouse</span></div>
+    <div class="meta">eShip Studio 2026 &middot; Advisor: Prof. Zachary Dodds</div>
+  </div>
+</div>
+</body>
+</html>

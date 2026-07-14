@@ -108,5 +108,5 @@ QUERIES_PER_BRAND = 20      # legacy generic fallback (no context provided)
 PANEL_SIZE = 40             # v2: queries in a frozen, context-grounded panel.
                             # ~40 gives a stabler mention rate (~±8pt vs ±11 at 20)
                             # and room to split targeted/holdout for causal proof.
-PROBE_CONCURRENCY = 5       # max parallel probe API calls (stay under rate limits)
-PARSE_CONCURRENCY = 8       # max parallel parse calls (Haiku is fast, can be higher)
+PROBE_CONCURRENCY = 12      # max parallel probe API calls (raised for faster audits)
+PARSE_CONCURRENCY = 12       # max parallel parse calls (Haiku is fast, can be higher)
