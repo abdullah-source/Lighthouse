@@ -363,3 +363,47 @@ pre,code,.act-code,.act-body pre{background:rgba(0,0,0,.34)!important;color:#9FE
 .err-box{background:rgba(251,113,133,.12)!important;border:1px solid rgba(251,113,133,.35)!important;color:#FCA5A5!important}
 .composer,.card,.kpi,.rec,.brand-item,.recent-chip,.panel-band{box-shadow:none}
 .composer{box-shadow:0 24px 60px -40px #000}
+
+
+/* ==== FANG-level dark polish ==== */
+/* ambient background depth on the app */
+.app-body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(1000px 560px at 72% -12%,rgba(34,211,238,.10),transparent 60%),
+             radial-gradient(820px 520px at 8% -6%,rgba(139,92,246,.11),transparent 56%),var(--bg)}
+/* inputs: dark glass everywhere, cyan focus ring */
+input,textarea,select{background:rgba(255,255,255,.045)!important;color:var(--ink)!important;
+  border:1px solid var(--line);border-radius:10px;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,211,238,.16)}
+::placeholder{color:var(--faint)!important;opacity:1}
+/* composer inner fields blend into the glass card */
+.c-brand,.c-cat,.c-context{background:transparent!important;border:0!important;box-shadow:none!important}
+.c-context{min-height:52px}
+/* composer card: real glass + focus glow */
+.composer{background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 30px 80px -50px #000,inset 0 1px 0 rgba(255,255,255,.05)}
+.composer:focus-within{border-color:rgba(34,211,238,.42);box-shadow:0 30px 80px -46px rgba(34,211,238,.22)}
+.composer-title{background:linear-gradient(100deg,#EAF0FA,#9AA7BC);-webkit-background-clip:text;background-clip:text;color:transparent}
+.c-comp:focus{box-shadow:0 0 0 3px rgba(34,211,238,.16)}
+/* example chips */
+.ex-chip{color:var(--accent)!important;background:rgba(34,211,238,.08)!important;border:1px solid rgba(34,211,238,.22)!important;transition:.15s}
+.ex-chip:hover{background:rgba(34,211,238,.16)!important;transform:translateY(-1px)}
+/* recent audits: even grid + hover lift */
+.recent-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:10px}
+.recent-chip{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:11px;transition:transform .16s,border-color .16s,background .16s}
+.recent-chip:hover{background:rgba(255,255,255,.07);border-color:var(--line2);transform:translateY(-2px)}
+.recent-head{color:var(--faint);letter-spacing:.08em}
+/* cards: subtle glass + hover */
+.card,.kpi,.rec,.brand-item,.panel-band,.gap-card,.build-card{background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.kpi,.rec,.brand-item{transition:border-color .16s,background .16s}
+.kpi:hover,.brand-item:hover{border-color:var(--line2);background:rgba(255,255,255,.06)}
+/* attach + ghost */
+.attach{border:1px solid var(--line);color:var(--muted);transition:.15s}
+.attach:hover{background:rgba(255,255,255,.06);color:var(--ink)}
+/* remaining light tints -> dark-appropriate */
+.vibe-own .vibe-pill{border-color:rgba(52,211,153,.35)!important}
+.gap-tag.warn{background:rgba(251,113,133,.14)!important;border-color:rgba(251,113,133,.35)!important;color:#FCA5A5!important}
+.ex-chip:hover{background:rgba(34,211,238,.16)!important}
+/* tabs + scrollbar */
+.tab{transition:color .15s,background .15s}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
