@@ -1,285 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Lighthouse · the measurement layer for AI search</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lighthouse — the measurement layer for AI search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,400..800&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#060A14; --bg2:#0A1122; --ink:#E9EEF7; --muted:#93A0B5; --faint:#5A6577;
-    --line:rgba(255,255,255,.09); --card:rgba(255,255,255,.04);
-    --cyan:#22D3EE; --violet:#8B5CF6; --amber:#F6B23A; --good:#34D399; --warn:#FB7185;
-  }
   *{margin:0;padding:0;box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.55;overflow-x:hidden}
-  a{color:inherit;text-decoration:none}
-  .mono{font-family:'JetBrains Mono',monospace}
-  .grad{background:linear-gradient(100deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
-  .wrap{max-width:1140px;margin:0 auto;padding:0 28px}
-
-  /* ambient */
-  .bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-  .bgfx .beam{position:absolute;top:-30%;left:50%;width:180vmax;height:180vmax;translate:-50% 0;
-    background:conic-gradient(from 0deg,transparent 0 80%,rgba(246,178,58,.07) 86%,transparent 92%);animation:sweep 22s linear infinite}
-  @keyframes sweep{to{transform:rotate(360deg)}}
-  .bgfx .glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5}
-  .bgfx .g1{width:620px;height:620px;background:rgba(34,211,238,.14);top:-180px;left:-140px}
-  .bgfx .g2{width:600px;height:600px;background:rgba(139,92,246,.14);top:8%;right:-160px}
-  .bgfx .grid{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:46px 46px;mask-image:radial-gradient(circle at 60% 20%,#000,transparent 65%);opacity:.5}
-  .content{position:relative;z-index:1}
-
-  /* nav */
-  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(6,10,20,.6);border-bottom:1px solid var(--line)}
-  .nav-in{display:flex;align-items:center;justify-content:space-between;height:66px}
-  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;letter-spacing:-.02em}
-  .logo .m{width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,var(--cyan),var(--violet));box-shadow:0 0 18px rgba(34,211,238,.6)}
-  .nlinks{display:flex;gap:26px;font-size:14px;color:var(--muted)}
-  .nlinks a:hover{color:var(--ink)}
-  .btn{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;padding:10px 18px;border-radius:11px;cursor:pointer;transition:.25s}
-  .btn-p{background:linear-gradient(100deg,var(--cyan),var(--violet));color:#04121a;box-shadow:0 0 0 rgba(34,211,238,0)}
-  .btn-p:hover{box-shadow:0 8px 30px -8px rgba(34,211,238,.6);transform:translateY(-1px)}
-  .btn-g{border:1px solid var(--line);color:var(--ink)}.btn-g:hover{border-color:var(--cyan)}
-  @media(max-width:760px){.nlinks{display:none}}
-
-  /* hero */
-  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:8vh 0 6vh}
-  @media(max-width:920px){.hero{grid-template-columns:1fr;gap:30px}}
-  .badge{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 13px}
-  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 10px var(--good);animation:pulse 1.4s infinite}
-  @keyframes pulse{50%{opacity:.35}}
-  h1.big{font-size:clamp(38px,5.4vw,68px);font-weight:900;letter-spacing:-.04em;line-height:1.02;margin:18px 0 18px}
-  .sub{font-size:clamp(16px,1.7vw,20px);color:var(--muted);max-width:30em}
-  .hero-cta{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
-  .chips{display:flex;gap:8px;margin-top:22px;align-items:center;flex-wrap:wrap}
-  .chips .k{font-size:12px;color:var(--faint)}
-  .chip{font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:7px}
-  .chip .d{width:6px;height:6px;border-radius:50%;background:var(--cyan)}
-
-  /* hero dashboard card */
-  .dash{border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));backdrop-filter:blur(10px);box-shadow:0 40px 120px -60px #000,0 0 0 1px rgba(34,211,238,.06);overflow:hidden}
-  .dash .top{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
-  .dash .top .t{font-weight:800;font-size:15px}.dash .top .t span{color:var(--faint);font-weight:500;font-size:12px}
-  .dash .tabs{display:flex;gap:6px}
-  .dtab{font-size:11px;color:var(--muted);padding:4px 10px;border-radius:7px;border:1px solid transparent}
-  .dtab.on{color:var(--ink);border-color:var(--line);background:var(--card)}
-  .dash .kpis{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}
-  .kpi{padding:14px 18px;border-right:1px solid var(--line)}.kpi:last-child{border:0}
-  .kpi .l{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700}
-  .kpi .v{font-size:26px;font-weight:900;letter-spacing:-.02em;margin-top:3px;font-variant-numeric:tabular-nums}
-  .kpi .v.c{color:var(--cyan)}
-  .dash .body{padding:16px 18px;display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
-  @media(max-width:520px){.dash .body{grid-template-columns:1fr}}
-  .dash h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;margin-bottom:9px}
-  .drow{display:flex;align-items:center;gap:9px;font-size:12px;padding:3px 0}
-  .drow .nm{width:74px;color:var(--muted)}.drow.you .nm{color:var(--cyan);font-weight:700}
-  .drow .tr{flex:1;height:7px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
-  .drow .tr>span{display:block;height:100%;width:0;border-radius:99px;background:rgba(255,255,255,.32);transition:width 1.1s cubic-bezier(.3,0,.2,1)}
-  .drow.you .tr>span{background:linear-gradient(90deg,var(--cyan),var(--violet))}
-  .drow .pc{width:30px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
-  .spark{margin-top:6px}
-  .src{display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-bottom:1px solid var(--line);color:var(--muted)}
-  .src:last-child{border:0}.src b{color:var(--cyan);font-weight:600}
-  .live{position:absolute;top:14px;right:18px;font-size:10px;color:var(--good);display:flex;align-items:center;gap:5px}
-
-  /* ticker */
-  .marq{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:13px 0;margin-top:10px;overflow:hidden;white-space:nowrap;background:var(--card)}
-  .marq .run{display:inline-block;animation:scroll 26s linear infinite}
-  .marq b{color:var(--cyan)}.marq span{color:var(--faint);margin:0 22px}
-  @keyframes scroll{to{transform:translateX(-50%)}}
-
-  /* sections */
-  section.blk{padding:12vh 0}
-  .eyebrow{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.2em;color:var(--cyan)}
-  h2{font-size:clamp(28px,3.6vw,46px);font-weight:900;letter-spacing:-.03em;line-height:1.06;margin:12px 0 14px;max-width:16em}
-  .lead2{font-size:17px;color:var(--muted);max-width:34em}
-  .reveal{opacity:0;transform:translateY(22px);transition:.7s cubic-bezier(.2,.7,.2,1)}
-  .reveal.in{opacity:1;transform:none}
-
-  .loop{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px}
-  @media(max-width:820px){.loop{grid-template-columns:1fr 1fr}}
-  .step{padding:20px;border-radius:16px;border:1px solid var(--line);background:var(--card);transition:.3s}
-  .step:hover{border-color:var(--cyan);transform:translateY(-4px)}
-  .step .st{font-size:11px;font-weight:800;color:var(--cyan);letter-spacing:.05em}
-  .step h3{font-size:18px;font-weight:800;margin:8px 0 6px;letter-spacing:-.01em}
-  .step p{font-size:13.5px;color:var(--muted)}
-
-  .wedge{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-top:20px}
-  @media(max-width:920px){.wedge{grid-template-columns:1fr}}
-  .rxcard{border-radius:16px;border:1px solid var(--line);background:var(--card);padding:18px 20px}
-  .rxcard .qh{font-size:12px;color:var(--muted);margin-bottom:12px}.rxcard .qh b{color:var(--ink)}
-  .rr{display:grid;grid-template-columns:150px 1fr 38px;align-items:center;gap:10px;padding:4px 0;font-size:12px}
-  .rr .d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
-  .rr .tr{height:7px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
-  .rr .tr>span{display:block;height:100%;border-radius:99px;background:rgba(255,255,255,.4)}
-  .rr .sc{text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
-  .rr.you{background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:9px;padding:7px;margin:3px -7px}
-  .rr.you .d{color:var(--cyan);font-weight:800}.rr.you .tr>span{background:linear-gradient(90deg,var(--cyan),var(--violet))}
-
-  .cats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:34px}
-  @media(max-width:820px){.cats{grid-template-columns:1fr 1fr}}
-  .cat{padding:18px;border-radius:14px;border:1px solid var(--line);background:var(--card)}
-  .cat .t{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700}
-  .cat .big{font-size:15px;font-weight:800;margin-top:6px;letter-spacing:-.01em}
-
-  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
-  @media(max-width:760px){.metrics{grid-template-columns:1fr}}
-  .metric{padding:22px;border-radius:16px;border:1px solid var(--line);background:var(--card);text-align:center}
-  .metric .v{font-size:44px;font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-  .metric .v.c{color:var(--cyan)}.metric .v.v{color:var(--violet)}.metric .v.a{color:var(--amber)}
-  .metric .l{font-size:13px;color:var(--muted);margin-top:4px}
-
-  .cta{text-align:center;padding:16vh 0 14vh}
-  .cta h2{margin:0 auto 18px}
-  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--faint);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  body{background:#F6F5F0;color:#15191E;font-family:Archivo,system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.55}
+  a{color:#C41E63;text-decoration:none}
+  a:hover{color:#15191E}
+  ::selection{background:rgba(196,30,99,.16)}
+  :focus-visible{outline:2px solid #C41E63;outline-offset:2px}
+  .mono{font-family:'Fragment Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .cta{cursor:pointer;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding:13px 20px;border-radius:6px;background:#15191E;color:#F6F5F0;display:inline-block;transition:background .15s}
+  .cta:hover{background:#000;color:#F6F5F0}
+  .cta.sm{padding:11px 18px}
+  .ghost{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding:13px 20px;border-radius:6px;border:1px solid #15191E;color:#15191E;display:inline-block;transition:.15s}
+  .ghost:hover{background:#15191E;color:#F6F5F0}
+  @keyframes lh-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes lh-ticker{to{transform:translateX(-50%)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="bgfx"><div class="beam"></div><div class="grid"></div><div class="glow g1"></div><div class="glow g2"></div></div>
 
-<div class="content">
-<nav><div class="wrap nav-in">
-  <div class="logo"><span class="m"></span> Lighthouse</div>
-  <div class="nlinks"><a href="#how">How it works</a><a href="#wedge">The wedge</a><a href="#market">Coverage</a></div>
-  <a class="btn btn-p" href="/app">Open dashboard</a>
-</div></nav>
+<!-- NAV -->
+<nav style="position:sticky;top:0;z-index:60;background:rgba(246,245,240,.98);border-bottom:1px solid #DAD7CD;backdrop-filter:saturate(1.2) blur(6px)">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:9px;font-weight:800;font-size:18px;letter-spacing:-.02em;font-stretch:125%"><span style="width:7px;height:7px;border-radius:50%;background:#C41E63"></span>Lighthouse</div>
+    <div style="display:flex;align-items:center;gap:28px">
+      <div class="mono" style="display:flex;gap:24px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#565D66">
+        <a href="#method" style="color:#565D66">Method</a>
+        <a href="#engines" style="color:#565D66">Engines</a>
+        <a href="#proof" style="color:#565D66">Proof</a>
+      </div>
+      <a href="/app" class="mono cta">Run a free audit →</a>
+    </div>
+  </div>
+</nav>
 
 <!-- HERO -->
-<div class="wrap">
-  <div class="hero">
-    <div class="reveal in">
-      <div class="badge"><span class="dot"></span> Live across GPT-5, Claude, and Perplexity</div>
-      <h1 class="big">See <span class="grad">why AI</span> does not recommend you. Then fix it.</h1>
-      <p class="sub">When buyers ask an AI what to choose, it names a few brands. Lighthouse measures whether you are one of them, reconstructs the retrieval to show <b>why</b>, and builds the fix from the evidence.</p>
-      <div class="hero-cta">
-        <a class="btn btn-p" href="/app">Run a free audit</a>
-        <a class="btn btn-g" href="#how">See how it works</a>
-      </div>
-      <div class="chips"><span class="k">Measuring</span>
-        <span class="chip"><span class="d"></span>GPT-5</span>
-        <span class="chip"><span class="d"></span>Claude</span>
-        <span class="chip"><span class="d"></span>Perplexity</span>
+<section style="max-width:1200px;margin:0 auto;padding:96px 24px 88px">
+  <div class="hero-grid" style="display:grid;grid-template-columns:5fr 7fr;gap:56px;align-items:center">
+    <div>
+      <div class="mono" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#565D66;opacity:0;animation:lh-rise .3s .05s cubic-bezier(.2,0,0,1) forwards">Measurement layer for AI search</div>
+      <h1 style="font-stretch:125%;font-weight:800;letter-spacing:-.022em;line-height:1.04;font-size:clamp(2.6rem,1.8rem + 3.2vw,4.4rem);margin:16px 0 18px;text-wrap:balance;opacity:0;animation:lh-rise .3s .11s cubic-bezier(.2,0,0,1) forwards">The biggest name in web hosting appears in <span style="color:#C41E63">18%</span> of AI answers.</h1>
+      <p style="font-size:clamp(1rem,.95rem + .25vw,1.125rem);color:#565D66;max-width:46ch;opacity:0;animation:lh-rise .3s .17s cubic-bezier(.2,0,0,1) forwards">Buyers ask AI what to choose. Lighthouse measures whether it says your name, reconstructs why, and proves the fix moved the number.</p>
+      <div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;opacity:0;animation:lh-rise .3s .23s cubic-bezier(.2,0,0,1) forwards">
+        <a href="/app" class="mono cta">Run a free audit →</a>
+        <a href="#method" class="mono ghost">See the method</a>
       </div>
     </div>
-
-    <!-- live dashboard preview -->
-    <div class="dash reveal in" style="position:relative">
-      <div class="top"><div class="t">Hostinger <span>· web hosting</span></div>
-        <div class="tabs"><span class="dtab on">Overview</span><span class="dtab">Why you lose</span><span class="dtab">Act</span></div></div>
-      <div class="live"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--good);display:inline-block;box-shadow:0 0 8px var(--good)"></span>live</div>
-      <div class="kpis">
-        <div class="kpi"><div class="l">Mention rate</div><div class="v c" data-count="72" data-suf="%">0%</div></div>
-        <div class="kpi"><div class="l">Share of voice</div><div class="v" data-count="24" data-suf="%">0%</div></div>
-        <div class="kpi"><div class="l">Engines</div><div class="v">3</div></div>
-      </div>
-      <div class="body">
-        <div><h4>You vs the field</h4>
-          <div class="drow you"><span class="nm">Hostinger</span><span class="tr"><span data-w="72%"></span></span><span class="pc">72</span></div>
-          <div class="drow"><span class="nm">SiteGround</span><span class="tr"><span data-w="60%"></span></span><span class="pc">60</span></div>
-          <div class="drow"><span class="nm">Bluehost</span><span class="tr"><span data-w="51%"></span></span><span class="pc">51</span></div>
-          <div class="drow"><span class="nm">DreamHost</span><span class="tr"><span data-w="41%"></span></span><span class="pc">41</span></div>
-          <div class="drow"><span class="nm">GoDaddy</span><span class="tr"><span data-w="18%"></span></span><span class="pc">18</span></div>
-          <svg class="spark" width="100%" height="34" viewBox="0 0 240 34" preserveAspectRatio="none">
-            <polyline id="spk" fill="none" stroke="url(#sg)" stroke-width="2.5" points="0,26 40,24 80,20 120,22 160,15 200,12 240,8"/>
-            <defs><linearGradient id="sg"><stop offset="0" stop-color="#22D3EE"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient></defs></svg>
+    <!-- AUDIT ARTIFACT -->
+    <div style="opacity:0;animation:lh-rise .4s .3s cubic-bezier(.65,0,.35,1) forwards">
+      <div style="background:#FDFCF9;border:1px solid #DAD7CD;border-radius:6px;overflow:hidden">
+        <div class="mono" style="display:flex;justify-content:space-between;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#565D66;padding:12px 16px;border-bottom:1px solid #DAD7CD">
+          <span>Audit — web hosting · 120 responses</span><span style="color:#C41E63">● live</span>
         </div>
-        <div><h4>Sources AI cites</h4>
-          <div class="src"><span>reddit.com</span><b>38</b></div>
-          <div class="src"><span>cnet.com</span><b>30</b></div>
-          <div class="src"><span>youtube.com</span><b>31</b></div>
-          <div class="src"><span>techradar.com</span><b>17</b></div>
+        <div class="mono" style="font-size:12px;color:#15191E;padding:12px 16px 6px">query: <span style="color:#565D66">"best host for a small business site?"</span></div>
+        <div id="lh-audit" style="position:relative;padding:6px 16px 12px">
+          <div id="lh-beam" style="position:absolute;top:8px;bottom:40px;left:0;width:26px;background:linear-gradient(90deg,rgba(196,30,99,0),rgba(196,30,99,.16));border-right:1.5px solid #C41E63;transform:translateX(0);pointer-events:none;opacity:0"></div>
+          <table style="width:100%;border-collapse:collapse;position:relative">
+            <thead>
+              <tr class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#565D66">
+                <th style="text-align:left;font-weight:500;padding:6px 4px">Brand</th>
+                <th style="text-align:center;font-weight:500;padding:6px 4px">GPT-5</th>
+                <th style="text-align:center;font-weight:500;padding:6px 4px">Claude</th>
+                <th style="text-align:center;font-weight:500;padding:6px 4px">Perplexity</th>
+                <th style="text-align:right;font-weight:500;padding:6px 4px">Share</th>
+              </tr>
+            </thead>
+            <tbody class="mono" style="font-size:13px">
+              <tr style="border-top:1px solid #DAD7CD">
+                <td style="text-align:left;padding:9px 4px;font-weight:600;color:#15191E">Hostinger</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#0E5F55;opacity:.18">✓ 1</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#0E5F55;opacity:.18">✓ 2</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#0E5F55;opacity:.18">✓ 1</td>
+                <td data-sweep style="text-align:right;padding:9px 4px;font-weight:600;opacity:.18">72.5%</td>
+              </tr>
+              <tr style="border-top:1px solid #DAD7CD">
+                <td style="text-align:left;padding:9px 4px;color:#565D66">SiteGround</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#0E5F55;opacity:.18">✓ 2</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#0E5F55;opacity:.18">✓ 1</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#0E5F55;opacity:.18">✓ 3</td>
+                <td data-sweep style="text-align:right;padding:9px 4px;color:#565D66;opacity:.18">64.1%</td>
+              </tr>
+              <tr style="border-top:1px solid #DAD7CD">
+                <td style="text-align:left;padding:9px 4px;color:#565D66">Bluehost</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#0E5F55;opacity:.18">✓ 3</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#565D66;opacity:.18">—</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#0E5F55;opacity:.18">✓ 2</td>
+                <td data-sweep style="text-align:right;padding:9px 4px;color:#565D66;opacity:.18">48.9%</td>
+              </tr>
+              <tr style="border-top:1px solid #DAD7CD">
+                <td style="text-align:left;padding:9px 4px;color:#565D66">GoDaddy</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#565D66;opacity:.18">—</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#565D66;opacity:.18">—</td>
+                <td data-sweep style="text-align:center;padding:9px 4px;color:#0E5F55;opacity:.18">✓ 4</td>
+                <td data-sweep style="text-align:right;padding:9px 4px;color:#C41E63;font-weight:600;opacity:.18">18.3%</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#565D66;border-top:1px solid #DAD7CD;padding-top:10px;margin-top:6px">Live audit · 40-query frozen panel · 2026</div>
         </div>
       </div>
     </div>
   </div>
+</section>
+
+<!-- TICKER -->
+<div style="background:#2A313A;overflow:hidden;white-space:nowrap">
+  <div id="lh-ticker" class="mono" style="display:inline-block;padding:13px 0;font-size:12px;text-transform:uppercase;letter-spacing:.06em;animation:lh-ticker 40s linear infinite"></div>
 </div>
 
-<div class="marq mono"><div class="run" id="run"></div></div>
-
-<!-- HOW / LOOP -->
-<section class="blk" id="how"><div class="wrap">
-  <div class="reveal"><div class="eyebrow">The platform</div>
-    <h2>Measure, diagnose, build, prove. One loop.</h2>
-    <p class="lead2">Most tools stop at a dashboard. Lighthouse closes the loop and compounds every cycle.</p></div>
-  <div class="loop">
-    <div class="step reveal"><div class="st">01 MEASURE</div><h3>Across every engine</h3><p>Mention rate, share of voice, who wins, broken out by model.</p></div>
-    <div class="step reveal"><div class="st">02 DIAGNOSE</div><h3>The why</h3><p>The sources AI cites, the language you lack, and why your page loses.</p></div>
-    <div class="step reveal"><div class="st">03 BUILD</div><h3>The fix</h3><p>Publish-ready content, schema, and landing pages, from the evidence.</p></div>
-    <div class="step reveal"><div class="st">04 PROVE</div><h3>Re-measure</h3><p>Run it again in weeks and show the real movement.</p></div>
-  </div>
-</div></section>
-
-<!-- WEDGE -->
-<section class="blk" id="wedge"><div class="wrap">
-  <div class="reveal"><div class="eyebrow">The wedge</div>
-    <h2>Everyone measures the answer. <span class="grad">We reconstruct the retrieval.</span></h2></div>
-  <div class="wedge">
-    <div class="reveal"><p class="lead2">Before an AI answers, it retrieves pages and reads from those. We rebuild that step and rank your page against the ones it cites. That is how we tell you why you lose, validated almost 8 times better than chance.</p>
-      <p class="lead2" style="margin-top:14px;color:var(--ink)">Hostinger is recommended 72% of the time, but on other people's pages. Its own homepage ranks 19th of 28.</p></div>
-    <div class="rxcard reveal">
-      <div class="qh">Reconstructed retrieval · <b>"lowest entry price web hosting"</b></div>
-      <div class="rr"><span class="d">namepros.com</span><span class="tr"><span style="width:96%"></span></span><span class="sc">0.70</span></div>
-      <div class="rr"><span class="d">whoishostingthis.com</span><span class="tr"><span style="width:90%"></span></span><span class="sc">0.65</span></div>
-      <div class="rr"><span class="d">cnet.com</span><span class="tr"><span style="width:87%"></span></span><span class="sc">0.63</span></div>
-      <div class="rr"><span class="d">techradar.com</span><span class="tr"><span style="width:84%"></span></span><span class="sc">0.61</span></div>
-      <div class="rr you"><span class="d">hostinger.com · YOU · #19 of 28</span><span class="tr"><span style="width:52%"></span></span><span class="sc">0.52</span></div>
+<!-- METHOD -->
+<section id="method" style="max-width:1200px;margin:0 auto;padding:112px 24px" data-reveal>
+  <div class="mono" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#565D66">The method</div>
+  <h2 style="font-stretch:125%;font-weight:700;letter-spacing:-.02em;line-height:1.15;font-size:clamp(1.75rem,1.4rem + 1.2vw,2.4rem);margin:12px 0 8px">How an answer gets made.</h2>
+  <p style="font-size:1.0625rem;color:#565D66;max-width:65ch;margin-bottom:44px">Engines that search first answer from what they retrieve. Lighthouse rebuilds that retrieval with its own embedding stack and compares it to the pages actually cited, so "why you're absent" is measured, not guessed.</p>
+  <div style="display:flex;align-items:stretch;gap:0;flex-wrap:wrap;border:1px solid #DAD7CD;border-radius:6px;background:#FDFCF9">
+    <div style="flex:1;min-width:150px;padding:22px 18px;border-right:1px solid #DAD7CD">
+      <div class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#565D66">Step 01</div>
+      <div style="font-weight:700;font-size:15px;margin-top:8px;font-stretch:110%">Buyer question</div>
+      <p style="font-size:13px;color:#565D66;margin-top:4px">A real purchase query, in the buyer's words.</p>
+    </div>
+    <div style="flex:1;min-width:150px;padding:22px 18px;border-right:1px solid #DAD7CD;background:rgba(196,30,99,.03)">
+      <div class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#C41E63">Step 02 · reconstructed</div>
+      <div style="font-weight:700;font-size:15px;margin-top:8px;font-stretch:110%">Retrieval</div>
+      <p style="font-size:13px;color:#565D66;margin-top:4px">The web the engine reads, rebuilt and ranked.</p>
+    </div>
+    <div style="flex:1;min-width:150px;padding:22px 18px;border-right:1px solid #DAD7CD;background:rgba(196,30,99,.03)">
+      <div class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#C41E63">Step 03 · reconstructed</div>
+      <div style="font-weight:700;font-size:15px;margin-top:8px;font-stretch:110%">Cited sources</div>
+      <p style="font-size:13px;color:#565D66;margin-top:4px">The pages the answer actually leaned on.</p>
+    </div>
+    <div style="flex:1;min-width:150px;padding:22px 18px">
+      <div class="mono" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#565D66">Step 04</div>
+      <div style="font-weight:700;font-size:15px;margin-top:8px;font-stretch:110%">The answer</div>
+      <p style="font-size:13px;color:#565D66;margin-top:4px">Who gets named, and who doesn't.</p>
     </div>
   </div>
-</div></section>
+  <div class="mono" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#C41E63;margin-top:10px;padding-left:2px">└ Lighthouse reconstructs steps 02–03, the wedge no one else measures.</div>
+</section>
 
-<!-- MARKET -->
-<section class="blk" id="market"><div class="wrap">
-  <div class="reveal"><div class="eyebrow">Coverage</div>
-    <h2>Any brand. Any category. Same gap.</h2>
-    <p class="lead2">We have already measured across four, and it holds every time.</p></div>
-  <div class="cats">
-    <div class="cat reveal"><div class="t">CRM software</div><div class="big">HubSpot ranks #22</div></div>
-    <div class="cat reveal"><div class="t">Legal</div><div class="big">Cooley loses to listicles</div></div>
-    <div class="cat reveal"><div class="t">Edu tools</div><div class="big">GradeWiz sits at 0%</div></div>
-    <div class="cat reveal"><div class="t">Web hosting</div><div class="big">GoDaddy nearly invisible</div></div>
+<!-- LOOP -->
+<section style="max-width:1200px;margin:0 auto;padding:0 24px 112px" data-reveal>
+  <div class="mono" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#565D66">The loop</div>
+  <h2 style="font-stretch:125%;font-weight:700;letter-spacing:-.02em;font-size:clamp(1.75rem,1.4rem + 1.2vw,2.4rem);margin:12px 0 40px">Measure → Diagnose → Act → Prove.</h2>
+  <div class="loop-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#DAD7CD;border:1px solid #DAD7CD;border-radius:6px;overflow:hidden">
+    <div style="background:#F6F5F0;padding:24px 20px">
+      <div class="mono" style="font-size:12px;color:#C41E63">01 · MEASURE</div>
+      <h3 style="font-weight:700;font-size:17px;margin:10px 0 6px;font-stretch:110%">Every query, every engine</h3>
+      <p style="font-size:13.5px;color:#565D66">Run the whole panel weekly and count who gets named.</p>
+      <div class="mono" style="font-size:11px;color:#565D66;margin-top:14px;padding-top:10px;border-top:1px solid #DAD7CD">40 QUERIES × 3 ENGINES = 120 RESPONSES · ~3 MIN</div>
+    </div>
+    <div style="background:#F6F5F0;padding:24px 20px">
+      <div class="mono" style="font-size:12px;color:#C41E63">02 · DIAGNOSE</div>
+      <h3 style="font-weight:700;font-size:17px;margin:10px 0 6px;font-stretch:110%">Where you actually rank</h3>
+      <p style="font-size:13.5px;color:#565D66">Which sources drive the category, and your place in it.</p>
+      <div class="mono" style="font-size:11px;color:#565D66;margin-top:14px;padding-top:10px;border-top:1px solid #DAD7CD">YOUR PAGE: #19 OF 28 FOR "BEST CRM FOR SMB"</div>
+    </div>
+    <div style="background:#F6F5F0;padding:24px 20px">
+      <div class="mono" style="font-size:12px;color:#C41E63">03 · ACT</div>
+      <h3 style="font-weight:700;font-size:17px;margin:10px 0 6px;font-stretch:110%">Crawler + grounded content</h3>
+      <p style="font-size:13.5px;color:#565D66">Fix what blocks retrieval, publish what earns it.</p>
+      <div class="mono" style="font-size:11px;color:#C41E63;margin-top:14px;padding-top:10px;border-top:1px solid #DAD7CD">GPTBOT: DENIED IN ROBOTS.TXT</div>
+    </div>
+    <div style="background:#F6F5F0;padding:24px 20px">
+      <div class="mono" style="font-size:12px;color:#C41E63">04 · PROVE</div>
+      <h3 style="font-weight:700;font-size:17px;margin:10px 0 6px;font-stretch:110%">Causal, not vanity</h3>
+      <p style="font-size:13.5px;color:#565D66">Same frozen panel, difference-in-differences vs a holdout.</p>
+      <div class="mono" style="font-size:11px;color:#0E5F55;margin-top:14px;padding-top:10px;border-top:1px solid #DAD7CD">+15 PTS · 95% CI · DRIFT-CONTROLLED</div>
+    </div>
   </div>
-  <div class="metrics">
-    <div class="metric reveal"><div class="v c" data-count="7.8" data-suf="x">0x</div><div class="l">retrieval fidelity vs chance</div></div>
-    <div class="metric reveal"><div class="v v">~1&cent;</div><div class="l">added cost per audit</div></div>
-    <div class="metric reveal"><div class="v a">3</div><div class="l">engines, live</div></div>
+</section>
+
+<!-- PROOF STRIP -->
+<section id="proof" style="border-top:1px solid #DAD7CD;border-bottom:1px solid #DAD7CD" data-reveal>
+  <div class="proof-grid" style="max-width:1200px;margin:0 auto;padding:56px 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:32px">
+    <div><div class="mono" style="font-size:clamp(1.75rem,1.4rem + 1.2vw,2.4rem);font-weight:400;letter-spacing:-.02em">7.8×</div><div style="font-size:13px;color:#565D66;margin-top:6px">retrieval reconstruction vs random baseline</div></div>
+    <div><div class="mono" style="font-size:clamp(1.75rem,1.4rem + 1.2vw,2.4rem);font-weight:400;letter-spacing:-.02em">120</div><div style="font-size:13px;color:#565D66;margin-top:6px">responses per grounded audit</div></div>
+    <div><div class="mono" style="font-size:clamp(1.75rem,1.4rem + 1.2vw,2.4rem);font-weight:400;letter-spacing:-.02em">~3<span style="font-size:.5em"> MIN</span></div><div style="font-size:13px;color:#565D66;margin-top:6px">full multi-engine run</div></div>
+    <div><div class="mono" style="font-size:clamp(1.75rem,1.4rem + 1.2vw,2.4rem);font-weight:400;letter-spacing:-.02em">DiD</div><div style="font-size:13px;color:#565D66;margin-top:6px">causal lift vs frozen holdout</div></div>
   </div>
-</div></section>
+</section>
+
+<!-- ENGINES -->
+<section id="engines" style="max-width:1200px;margin:0 auto;padding:112px 24px" data-reveal>
+  <div class="mono" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#565D66">Engines</div>
+  <h2 style="font-stretch:125%;font-weight:700;letter-spacing:-.02em;font-size:clamp(1.75rem,1.4rem + 1.2vw,2.4rem);margin:12px 0 32px">Live across three. Honest about the fourth.</h2>
+  <div class="mono" style="font-size:14px">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 4px;border-top:1px solid #DAD7CD"><span style="width:8px;height:8px;border-radius:50%;background:#0E5F55"></span><span style="flex:1">GPT-5</span><span style="color:#565D66;text-transform:uppercase;font-size:11px;letter-spacing:.06em">live</span></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 4px;border-top:1px solid #DAD7CD"><span style="width:8px;height:8px;border-radius:50%;background:#0E5F55"></span><span style="flex:1">Claude</span><span style="color:#565D66;text-transform:uppercase;font-size:11px;letter-spacing:.06em">live</span></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 4px;border-top:1px solid #DAD7CD"><span style="width:8px;height:8px;border-radius:50%;background:#0E5F55"></span><span style="flex:1">Perplexity Sonar</span><span style="color:#565D66;text-transform:uppercase;font-size:11px;letter-spacing:.06em">live · citations</span></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 4px;border-top:1px solid #DAD7CD;border-bottom:1px solid #DAD7CD;color:#565D66"><span style="width:8px;height:8px;border-radius:50%;border:1.5px solid #DAD7CD"></span><span style="flex:1">Gemini</span><span style="text-transform:uppercase;font-size:11px;letter-spacing:.06em">next</span></div>
+  </div>
+</section>
 
 <!-- CTA -->
-<section class="cta"><div class="wrap reveal">
-  <div class="eyebrow" style="text-align:center">Start now</div>
-  <h2 style="text-align:center">Find out why the AI is not recommending you.</h2>
-  <a class="btn btn-p" href="/app" style="font-size:16px;padding:14px 26px">Run a free audit</a>
-</div></section>
+<section id="cta" style="max-width:1200px;margin:0 auto;padding:16px 24px 120px;text-align:center" data-reveal>
+  <h2 style="font-stretch:125%;font-weight:800;letter-spacing:-.022em;font-size:clamp(2rem,1.6rem + 1.6vw,3rem);margin-bottom:14px">Know your number.</h2>
+  <p style="font-size:1.0625rem;color:#565D66;max-width:52ch;margin:0 auto 28px">Free audit: your mention rate, position, and share of voice across three engines.</p>
+  <a href="/app" class="mono cta" style="font-size:13px;padding:15px 26px">Run a free audit →</a>
+  <div class="mono" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#565D66;margin-top:18px">No credit card · Results in minutes</div>
+</section>
 
-<footer><div class="wrap" style="display:flex;justify-content:space-between;width:100%">
-  <div class="logo" style="font-size:15px"><span class="m"></span> Lighthouse</div>
-  <span>The measurement layer for AI search.</span>
-</div></footer>
-</div>
+<!-- FOOTER -->
+<footer style="border-top:1px solid #DAD7CD">
+  <div style="max-width:1200px;margin:0 auto;padding:32px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">
+    <div style="display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px;font-stretch:125%;letter-spacing:-.02em"><span style="width:7px;height:7px;border-radius:50%;background:#C41E63"></span>Lighthouse</div>
+    <div style="font-size:13px;color:#565D66">The measurement layer for AI search.</div>
+    <div class="mono" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#565D66;display:flex;gap:18px"><a href="#method" style="color:#565D66">Method</a><a href="#proof" style="color:#565D66">Proof</a><a href="/app" style="color:#565D66">Audit</a></div>
+  </div>
+</footer>
 
+<style>
+  @media (max-width:820px){
+    .hero-grid{grid-template-columns:1fr!important}
+    .loop-grid,.proof-grid{grid-template-columns:repeat(2,1fr)!important}
+  }
+</style>
 <script>
-  // scroll reveal
-  const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add("in");}),{threshold:.15});
-  document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
-  // counters
-  function countUp(el){const to=parseFloat(el.dataset.count),suf=el.dataset.suf||"";const dec=to%1?1:0;let s=null;
-    (function step(t){if(!s)s=t;const p=Math.min(1,(t-s)/1100);el.textContent=(to*(1-Math.pow(1-p,3))).toFixed(dec)+suf;
-      if(p<1)requestAnimationFrame(step);else el.textContent=to.toFixed(dec)+suf;})(0);}
-  // animate hero dashboard once
-  setTimeout(()=>{
-    document.querySelectorAll(".dash [data-count]").forEach(countUp);
-    document.querySelectorAll(".dash .tr>span[data-w]").forEach(s=>s.style.width=s.dataset.w);
-  },400);
-  // counters in view (metrics)
-  const io2=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting&&!e.target._d){e.target._d=1;
-    e.target.querySelectorAll("[data-count]").forEach(countUp);}}),{threshold:.4});
-  document.querySelectorAll(".metrics").forEach(el=>io2.observe(el));
+(function(){
+  var reduced = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
   // ticker
-  const T=["web hosting: SiteGround, Bluehost, Hostinger","CRM: Salesforce, HubSpot, Zoho","legal: Wilson Sonsini, Cooley","edu: Gradescope, Turnitin","insurance: Lemonade, Geico"];
-  const line=T.map(t=>{const[c,b]=t.split(": ");return `<span>AI recommends</span> ${c}: <b>${b}</b>`;}).join("");
-  document.getElementById("run").innerHTML=line+line;
+  (function(){
+    var el = document.getElementById('lh-ticker'); if(!el) return;
+    var rows = [['web hosting','SiteGround · Bluehost · Hostinger'],['CRM','Salesforce · HubSpot · Zoho'],['legal','Wilson Sonsini · Cooley · Latham'],['edu tools','Gradescope · Turnitin'],['insurance','Lemonade · Geico · Progressive']];
+    var seg = rows.map(function(r){return '<span style="color:#565D66;margin:0 10px 0 30px">AI recommends —</span><span style="color:#F6F5F0">'+r[0]+':</span><span style="color:#9AA0A6;margin-left:8px">'+r[1]+'</span>';}).join('');
+    el.innerHTML = seg + seg;
+    if(reduced){el.style.animation='none';return;}
+    el.addEventListener('mouseenter',function(){el.style.animationPlayState='paused';});
+    el.addEventListener('mouseleave',function(){el.style.animationPlayState='running';});
+  })();
+
+  // scroll reveals
+  (function(){
+    var els = document.querySelectorAll('[data-reveal]');
+    if(!reduced) els.forEach(function(el){el.style.opacity='0';el.style.transform='translateY(6px)';el.style.transition='opacity .24s cubic-bezier(.2,0,0,1), transform .24s cubic-bezier(.2,0,0,1)';});
+    var vh = function(){return window.innerHeight||800;};
+    var check = function(){els.forEach(function(el){var r=el.getBoundingClientRect();if(r.top<vh()*0.85 && r.bottom>0){el.style.opacity='1';el.style.transform='none';}});};
+    check(); requestAnimationFrame(check);
+    window.addEventListener('scroll',check,{passive:true});
+  })();
+
+  // hero audit sweep
+  (function(){
+    var wrap=document.getElementById('lh-audit'), beam=document.getElementById('lh-beam');
+    var cells=[].slice.call(document.querySelectorAll('[data-sweep]'));
+    if(reduced||!wrap||!beam){cells.forEach(function(c){c.style.opacity='1';});return;}
+    var W=0, fracs=[];
+    var measure=function(){var wr=wrap.getBoundingClientRect();W=wr.width-32;fracs=cells.map(function(c){var r=c.getBoundingClientRect();return (r.left+r.width/2-(wr.left+16))/W;});};
+    measure(); window.addEventListener('resize',measure,{passive:true});
+    var ease=function(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;};
+    var PERIOD=8000, CROSS=1600, start=performance.now()+500;
+    var loop=function(now){
+      var el=now-start;
+      if(el<0){requestAnimationFrame(loop);return;}
+      var p=el%PERIOD;
+      if(p<CROSS){var prog=ease(p/CROSS);beam.style.opacity='1';beam.style.transform='translateX('+(prog*W)+'px)';cells.forEach(function(c,i){c.style.opacity=fracs[i]<=prog?'1':'.18';});}
+      else{beam.style.opacity='0';cells.forEach(function(c){c.style.opacity='1';});}
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  })();
+})();
 </script>
 </body>
 </html>

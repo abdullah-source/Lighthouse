@@ -50,3 +50,7 @@ logs/
 web/*.bak
 poster/*.png
 poster/*.pdf
+
+# design source binaries (kept local)
+Design.pdf
+*.zip
