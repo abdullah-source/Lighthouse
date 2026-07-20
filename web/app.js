@@ -50,6 +50,7 @@ const askCache = {};     // brand_id -> { q, html }
 const actionCache = {};  // brand_id -> { competitor -> plan }
 const buildCache = {};   // brand_id -> { mode -> build result } (landing / gtm)
 const retrievalCache = {}; // brand_id -> retrieval reconstruction result
+const aivisionCache = {};  // brand_id -> AI Vision plan
 
 // --- view toggle ------------------------------------------------------------
 
@@ -228,6 +229,7 @@ function render() {
       <div class="tab ${currentTab === "overview" ? "active" : ""}" data-tab="overview">Overview</div>
       <div class="tab ${currentTab === "vibes" ? "active" : ""}" data-tab="vibes">Vibes</div>
       <div class="tab ${currentTab === "action" ? "active" : ""}" data-tab="action">Action</div>
+      <div class="tab ${currentTab === "aivision" ? "active" : ""}" data-tab="aivision">AI Vision</div>
       <div class="tab ${currentTab === "retrieval" ? "active" : ""}" data-tab="retrieval">Why you lose</div>
       <div class="tab ${currentTab === "ask" ? "active" : ""}" data-tab="ask">Ask</div>
     </div>
@@ -237,6 +239,7 @@ function render() {
   if (currentTab === "overview") renderOverview();
   else if (currentTab === "vibes") renderVibes();
   else if (currentTab === "action") renderAction();
+  else if (currentTab === "aivision") renderAiVision();
   else if (currentTab === "retrieval") renderRetrieval();
   else renderAsk();
 }
@@ -466,6 +469,78 @@ function renderAction() {
       } finally { btn.disabled = false; btn.textContent = "Generate positioning + schema"; }
     };
   });
+}
+
+// --- AI Vision (startup-focused strategy + landing changes) ----------------
+
+function renderAiVision() {
+  const d = currentData;
+  const cached = aivisionCache[d.brand_id];
+  const seed = cached ? escapeHtml(cached.site || "") : (d.domain ? escapeHtml(d.domain) : "");
+  $("#tabbody").innerHTML = `
+    <p class="muted" style="margin:-4px 0 14px">For a brand AI doesn't know yet, the goal isn't "where do you rank," it's building your image in AI answers. This reads the category reality, your positioning, and your <b>live landing page</b>, then returns the strategic gaps and paste-ready page changes.</p>
+    <div class="rx-bar">
+      <input id="av-site" class="rx-input" type="text" placeholder="Your landing page URL (e.g. tualmi.com)" value="${seed}" />
+      <button id="av-go" class="btn btn-primary btn-sm">Build AI vision plan</button>
+    </div>
+    <div id="av-out"></div>`;
+  const out = $("#av-out");
+  const run = async () => {
+    const site = $("#av-site").value.trim();
+    const btn = $("#av-go"); btn.disabled = true; btn.textContent = "Building…";
+    out.innerHTML = `<div class="loading"><span class="spin"></span> Reading the category, your positioning, and your live page…</div>`;
+    try {
+      const r = await api(`/api/brands/${d.brand_id}/aivision`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ site: site || null }) });
+      aivisionCache[d.brand_id] = r;
+      renderAvResult(out, r);
+    } catch (e) { out.innerHTML = `<div class="err-box">Could not build: ${escapeHtml(e.message)}</div>`; }
+    finally { const b = $("#av-go"); if (b) { b.disabled = false; b.textContent = "Build AI vision plan"; } }
+  };
+  $("#av-go").onclick = run;
+  if (cached) renderAvResult(out, cached);
+}
+
+function renderAvResult(out, r) {
+  const coh = (r.coherence || []).map((c) => `
+    <div class="av-coh ${c.status}">
+      <div class="av-coh-h"><span class="av-claim">${escapeHtml(c.claim)}</span><span class="av-badge ${c.status}">${escapeHtml(c.status)}</span></div>
+      <div class="av-find">${escapeHtml(c.finding)}</div>
+      <div class="av-fix"><b>Fix:</b> ${escapeHtml(c.fix)}</div>
+    </div>`).join("");
+  const changes = (r.landing_changes || []).map((c) => `
+    <div class="av-change">
+      <div class="av-sec">${escapeHtml(c.section)}</div>
+      <div class="av-ba">
+        <div class="av-before"><span class="av-l">Current</span><span>${escapeHtml(c.current)}</span></div>
+        <div class="av-after"><span class="av-l">Suggested</span><span>${escapeHtml(c.suggested)}</span></div>
+      </div>
+      <div class="av-why">${escapeHtml(c.why)}</div>
+    </div>`).join("");
+  const terms = (r.terms_to_own || []).map((t) => `<span class="gap-tag warn">${escapeHtml(t)}</span>`).join("");
+  const models = (r.per_model || []).map((m) => `<div class="provrow"><span>${escapeHtml(m.model)}</span><span class="meta av-mi">${escapeHtml(m.insight)}</span></div>`).join("");
+  const moves = (r.priority_moves || []).map((m, i) => `<div class="av-move"><span class="av-num">${i + 1}</span><span>${escapeHtml(m)}</span></div>`).join("");
+  out.innerHTML = `
+    <div class="card av-reality"><h4>Category reality</h4><p style="font-size:14.5px;color:var(--ink)">${escapeHtml(r.category_reality || "")}</p>
+      ${r.positioning_read ? `<p class="muted" style="font-size:13px;margin-top:8px">Your positioning, read back: ${escapeHtml(r.positioning_read)}</p>` : ""}</div>
+    <div class="sec-sub">Strategic coherence — positioning vs your site vs winning language</div>${coh}
+    <div class="sec-sub">Terms to own — winning category language you can truthfully claim</div>
+    <div class="card"><div class="gap-tags">${terms || '<span class="muted">—</span>'}</div></div>
+    <div class="sec-sub">Landing page changes — paste-ready</div>${changes}
+    <div class="act-block"><div class="act-hd"><span>Schema markup (JSON-LD) for your &lt;head&gt;</span><span class="copy-slot"></span></div>
+      <pre class="act-code">${escapeHtml(r.schema_jsonld || "")}</pre></div>
+    <div class="sec-sub">Per model — how to earn presence in each</div><div class="card">${models || '<span class="muted">—</span>'}</div>
+    <div class="sec-sub">Priority moves</div><div class="card av-moves">${moves}</div>`;
+  const slot = out.querySelector(".copy-slot");
+  if (slot) {
+    slot.innerHTML = `<button class="btn btn-ghost btn-sm copy">Copy schema</button>`;
+    const note = document.createElement("span");
+    slot.querySelector(".copy").onclick = async () => {
+      try { await navigator.clipboard.writeText(r.schema_jsonld || ""); slot.querySelector(".copy").textContent = "Copied"; }
+      catch { slot.querySelector(".copy").textContent = "Copy manually"; }
+    };
+  }
 }
 
 function renderRetrieval() {

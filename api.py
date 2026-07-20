@@ -292,6 +292,54 @@ def simulate(req: SimulateRequest) -> dict:
     }
 
 
+class AiVisionRequest(BaseModel):
+    site: str | None = None   # the brand's own landing page URL
+
+
+@app.post("/api/brands/{brand_id}/aivision")
+def ai_vision(brand_id: int, req: AiVisionRequest | None = None) -> dict:
+    """AI Vision for startups: reframe a ~0-presence audit into a strategic-
+    coherence read + concrete landing-page changes that build the brand's image
+    in AI answers. Grounded in the real category reality, the brand's positioning,
+    and its live landing page."""
+    row = store.get_brand(brand_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="brand not found")
+    import aivision
+    import db
+
+    agg = store.aggregate_brand(brand_id)
+    lex = agg.get("lexical") or {}
+    they = [x["term"] for x in lex.get("they_own", [])][:16]
+    sources = [s["domain"] for s in (agg.get("provenance") or {}).get("top_sources", [])][:10]
+
+    # positioning: the brand's own ingested context (RAG grounding), if any
+    positioning = ""
+    try:
+        with db.get_conn() as c:
+            rows = c.execute(
+                "SELECT raw_text FROM context_documents WHERE brand_id=%s ORDER BY id",
+                (brand_id,),
+            ).fetchall()
+            positioning = "\n".join(r["raw_text"] for r in rows)[:4000]
+    except Exception:
+        pass
+    if not positioning:
+        positioning = f"{row['name']} - a brand in {row['category']}."
+
+    site = (req.site.strip() if req and req.site else None) or row.get("domain") or None
+    landing_text = aivision.fetch_landing_text(site) if site else ""
+
+    plan = aivision.generate_ai_vision(
+        brand=row["name"], category=row["category"], positioning=positioning,
+        landing_text=landing_text, competitors=agg.get("competitors") or [],
+        they_own=they, sources=sources, by_model=agg.get("by_model") or [],
+    )
+    plan["site"] = site
+    plan["has_landing"] = bool(landing_text)
+    return plan
+
+
 # --- static assets (mounted last so it doesn't shadow routes above) ---------
 
 app.mount("/", StaticFiles(directory=WEB_DIR), name="static")
