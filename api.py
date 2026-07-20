@@ -328,15 +328,21 @@ def ai_vision(brand_id: int, req: AiVisionRequest | None = None) -> dict:
         positioning = f"{row['name']} - a brand in {row['category']}."
 
     site = (req.site.strip() if req and req.site else None) or row.get("domain") or None
-    landing_text = aivision.fetch_landing_text(site) if site else ""
+    page = aivision.fetch_landing(site) if site else {"text": ""}
 
     plan = aivision.generate_ai_vision(
         brand=row["name"], category=row["category"], positioning=positioning,
-        landing_text=landing_text, competitors=agg.get("competitors") or [],
+        landing_text=page.get("text", ""), competitors=agg.get("competitors") or [],
         they_own=they, sources=sources, by_model=agg.get("by_model") or [],
+        page_signals=page,
     )
     plan["site"] = site
-    plan["has_landing"] = bool(landing_text)
+    plan["has_landing"] = bool(page.get("text"))
+    plan["page_signals"] = {
+        "schema_types": page.get("schema_types", []),
+        "has_meta_description": page.get("has_meta_description", False),
+        "platform": page.get("platform", ""),
+    }
     return plan
 
 

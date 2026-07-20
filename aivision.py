@@ -24,20 +24,49 @@ from config import ANTHROPIC_API_KEY, MODEL_ACTION
 UA = "Mozilla/5.0 (compatible; LighthouseBot/0.1)"
 
 
-def fetch_landing_text(url: str, limit: int = 6000) -> str:
-    """Fetch a landing page and return crawlable text (what an AI crawler sees)."""
+def fetch_landing(url: str, limit: int = 6000) -> dict:
+    """Fetch a landing page and return crawlable text PLUS head signals (existing
+    JSON-LD schema types, meta description, title, platform). We parse the raw
+    HTML for these BEFORE stripping scripts - otherwise JSON-LD (which lives in a
+    <script> tag) is invisible and we would wrongly report 'no schema'."""
+    empty = {"text": "", "schema_types": [], "has_meta_description": False, "title": "", "platform": ""}
     if not url:
-        return ""
+        return empty
     if not url.startswith("http"):
         url = "https://" + url
     try:
         r = httpx.get(url, timeout=15, follow_redirects=True, headers={"User-Agent": UA})
         html = r.text
     except Exception:
-        return ""
-    html = re.sub(r"(?is)<(script|style|noscript|svg).*?</\1>", " ", html)
-    text = re.sub(r"\s+", " ", re.sub(r"(?s)<[^>]+>", " ", html)).strip()
-    return text[:limit]
+        return empty
+    low = html.lower()
+    schema_types = []
+    for block in re.findall(r"<script[^>]+application/ld\+json[^>]*>(.*?)</script>", html, re.I | re.S):
+        schema_types += re.findall(r'"@type"\s*:\s*"([^"]+)"', block)
+    has_meta = bool(re.search(r'<meta[^>]+name=["\']description["\'][^>]+content=["\'][^"\']+', html, re.I))
+    title_m = re.findall(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
+    platform = (
+        "Shopify" if ("cdn.shopify" in low or "myshopify" in low) else
+        "Next.js/React" if ("__next_data__" in low or "/_next/" in low) else
+        "Squarespace" if "squarespace" in low else
+        "Webflow" if "webflow" in low else
+        "Wix" if ("_wix" in low or "wix.com" in low) else
+        "WordPress" if "wp-content" in low else ""
+    )
+    text = re.sub(r"(?is)<(script|style|noscript|svg).*?</\1>", " ", html)
+    text = re.sub(r"\s+", " ", re.sub(r"(?s)<[^>]+>", " ", text)).strip()
+    return {
+        "text": text[:limit],
+        "schema_types": sorted(set(schema_types)),
+        "has_meta_description": has_meta,
+        "title": (title_m[0].strip() if title_m else ""),
+        "platform": platform,
+    }
+
+
+def fetch_landing_text(url: str, limit: int = 6000) -> str:
+    """Backward-compatible text-only accessor."""
+    return fetch_landing(url, limit)["text"]
 
 
 _TOOL = {
@@ -119,6 +148,7 @@ def generate_ai_vision(
     sources: list[str],
     by_model: list[dict],
     your_avg_rank: float | None = None,
+    page_signals: dict | None = None,
 ) -> dict:
     """One Sonnet tool-use call -> structured AI-vision playbook."""
     comp_lines = "\n".join(
@@ -133,6 +163,19 @@ def generate_ai_vision(
         f"When we reconstruct the retrieval, the brand's own page ranks about #{round(your_avg_rank)} "
         "of the candidate pages for these buyer queries (near the bottom)."
         if your_avg_rank else ""
+    )
+    ps = page_signals or {}
+    head_line = (
+        "WHAT THE LIVE PAGE ALREADY HAS (verified from the raw HTML - be accurate, do not "
+        "tell them to add things they already have): "
+        f"title={'present' if ps.get('title') else 'missing'}; "
+        f"meta description={'present' if ps.get('has_meta_description') else 'missing'}; "
+        f"existing JSON-LD schema @types={ps.get('schema_types') or 'none'}; "
+        f"platform={ps.get('platform') or 'unknown'}. "
+        "If Organization schema is already present, recommend ADDING Product schema per item "
+        "and enriching the existing Organization block - do NOT say they have no schema. "
+        "JSON-LD is injected via a <script type=\"application/ld+json\"> tag and applies to "
+        "any platform (including this one)."
     )
     user = f"""BRAND: {brand}
 CATEGORY: {category}
@@ -152,6 +195,8 @@ Language AI already associates with the winning brands (the category's winning v
 
 Sources AI cites most in this category (where a brand must earn presence):
   {', '.join(sources[:10]) or '(none captured)'}
+
+{head_line}
 
 THE BRAND'S ACTUAL LIVE LANDING-PAGE TEXT (what an AI crawler sees today):
 \"\"\"{landing_text[:5000]}\"\"\"
