@@ -158,12 +158,15 @@ THE BRAND'S ACTUAL LIVE LANDING-PAGE TEXT (what an AI crawler sees today):
 
 Produce the ai_vision_plan. Focus on strategic coherence (positioning vs live site
 vs winning language) and concrete landing-page changes that would build this
-brand's image in AI answers. Use the real brand and competitor names."""
+brand's image in AI answers. Use the real brand and competitor names.
+Keep it tight: at most 6 coherence rows, at most 6 landing_changes, exactly 5
+priority_moves, one insight per engine. Always fill priority_moves and
+schema_jsonld."""
 
     client = Anthropic(api_key=ANTHROPIC_API_KEY)
     msg = client.messages.create(
         model=MODEL_ACTION,
-        max_tokens=5200,
+        max_tokens=8000,
         system=_SYSTEM,
         tools=[_TOOL],
         tool_choice={"type": "tool", "name": "ai_vision_plan"},
